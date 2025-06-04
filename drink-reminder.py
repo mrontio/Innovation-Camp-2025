@@ -6,12 +6,16 @@ import numpy as np
 import spidev
 import time
 from rpi_lcd import LCD
+import RPi.GPIO as GPIO
 
 picam2 = Picamera2()
 spi = spidev.SpiDev()
 lcd = LCD()
 
 WATER_LEVEL_CHANNEL = 0
+R_LED = 22
+G_LED = 27
+B_LED = 17
 
 def init_sensors() -> bool:
     '''
@@ -24,6 +28,11 @@ def init_sensors() -> bool:
     picam2.start()
     spi.open(0, 0)            # bus 0, device 0 (CE0)
     spi.max_speed_hz = 1350000
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(R_LED, GPIO.OUT)
+    GPIO.setup(G_LED, GPIO.OUT)
+    GPIO.setup(B_LED, GPIO.OUT)
+
     return True
 
 def play_audio(wav_file: str):
@@ -55,6 +64,12 @@ def print_to_lcd(line1: str, line2: str, lcd: LCD):
     lcd.text(line1, 1)
     lcd.text(line2, 2)
 
+
+def show_led_colour(r: bool, g: bool, b: bool):
+    GPIO.output(R_LED, r)
+    GPIO.output(G_LED, g)
+    GPIO.output(B_LED, b)
+
 def cleanup():
     lcd.clear()
 
@@ -69,11 +84,18 @@ try:
     while True:
         water_level = read_analog_channel(WATER_LEVEL_CHANNEL)
         print_to_lcd("Water level:", str(water_level), lcd)
+
+        image_np = capture_image_np(picam2)
+        dominant_colour = np.argmax(np.mean(image_np[:,:,:3], axis=(0, 1))).item()
+        show_led_colour(dominant_colour == 0, dominant_colour == 1, dominant_colour == 2)
+
         if (water_level >= 200):
             play_audio('slurp.wav')
 
         if (water_level <= 10):
             play_audio('water.wav')
+
+
 
         time.sleep(1)
 except KeyboardInterrupt:
