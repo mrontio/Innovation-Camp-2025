@@ -5,9 +5,11 @@ from PIL import Image
 import numpy as np
 import spidev
 import time
+from rpi_lcd import LCD
 
 picam2 = Picamera2()
 spi = spidev.SpiDev()
+lcd = LCD()
 
 WATER_LEVEL_CHANNEL = 0
 
@@ -47,17 +49,26 @@ def read_analog_channel(channel):
     response = spi.xfer2([command, 0, 0])
     return ((response[0] & 1) << 9) | (response[1] << 1) | (response[2] >> 7)
 
+def print_to_lcd(line1: str, line2: str, lcd: LCD):
+    if len(line1) > 15 or len(line2) > 15:
+        print('warning: text exceeds 15 characters will not be rendered.')
+    lcd.text(line1, 1)
+    lcd.text(line2, 2)
+
+def cleanup():
+    lcd.clear()
+
+
 # Execution begins here
 if not init_sensors():
     print(f'error: sensor initialisation failed')
     sys.exit(1)
 
 # Interesting part begins here
-
 try:
     while True:
         water_level = read_analog_channel(WATER_LEVEL_CHANNEL)
-        print(water_level)
+        print_to_lcd("Water level:", str(water_level), lcd)
         if (water_level >= 200):
             play_audio('slurp.wav')
 
@@ -67,3 +78,5 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("Ctrl-C Pressed.")
+
+cleanup()
