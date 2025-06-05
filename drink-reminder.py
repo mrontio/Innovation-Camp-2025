@@ -64,11 +64,13 @@ def print_to_lcd(line1: str, line2: str, lcd: LCD):
     lcd.text(line1, 1)
     lcd.text(line2, 2)
 
-
-def show_led_colour(r: bool, g: bool, b: bool):
+def show_led_colour(r: bool, g: bool, b: bool) -> None:
     GPIO.output(R_LED, r)
     GPIO.output(G_LED, g)
     GPIO.output(B_LED, b)
+
+def cup_detected(img_np: np.ndarray) -> bool:
+    return img_np.sum() > 190000000
 
 def cleanup():
     lcd.clear()
@@ -89,10 +91,9 @@ try:
         dominant_colour = np.argmax(np.mean(image_np[:,:,:3], axis=(0, 1))).item()
         show_led_colour(dominant_colour == 0, dominant_colour == 1, dominant_colour == 2)
 
-        if (water_level >= 200):
+        if cup_detected(image_np):
             play_audio('slurp.wav')
-
-        if (water_level <= 10):
+        else:
             play_audio('water.wav')
 
 
