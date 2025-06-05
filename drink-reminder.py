@@ -69,8 +69,26 @@ def show_led_colour(r: bool, g: bool, b: bool) -> None:
     GPIO.output(G_LED, g)
     GPIO.output(B_LED, b)
 
-def cup_detected(img_np: np.ndarray) -> bool:
-    return img_np.sum() > 190000000
+def cup_detected(img_np: np.ndarray, detection_threshold=200_000_000) -> bool:
+    return img_np.sum() > detection_threshold
+
+def get_sensor_into_cup(lcd):
+    print_to_lcd("    I THIRST   ", "    FOR MORE   ", lcd)
+    while read_analog_channel(WATER_LEVEL_CHANNEL) < 20:
+        play_audio('water.wav')
+    lcd.clear()
+    return
+
+def remind_user_about_water(lcd):
+    print_to_lcd("    CONSUME    ", "     WATER     ", lcd)
+    image_np = capture_image_np(picam2)
+    while cup_detected(image_np):
+        image_np = capture_image_np(picam2)
+        print(image_np.sum(), cup_detected(image_np))
+        play_audio('slurp.wav')
+    lcd.clear()
+    return
+
 
 def cleanup():
     lcd.clear()
@@ -81,24 +99,37 @@ if not init_sensors():
     print(f'error: sensor initialisation failed')
     sys.exit(1)
 
-# Interesting part begins here
+##### Interesting part begins here #####
+
+# Control Variables
+tick_length_s = 1.0
+ticks_till_reminder = 5
+lcd_second_line = ""
+
+# Try catch statement (so we can press Ctrl-C easily)
 try:
     while True:
+        ticks_till_reminder -= 1
         water_level = read_analog_channel(WATER_LEVEL_CHANNEL)
-        print_to_lcd("Water level:", str(water_level), lcd)
-
         image_np = capture_image_np(picam2)
-        dominant_colour = np.argmax(np.mean(image_np[:,:,:3], axis=(0, 1))).item()
-        show_led_colour(dominant_colour == 0, dominant_colour == 1, dominant_colour == 2)
-
-        if cup_detected(image_np):
-            play_audio('slurp.wav')
+        print(f"ticks left: {ticks_till_reminder}, image sum: {image_np.sum()}, water_level: {water_level}")
+        if cup_detected(capture_image_np(picam2)):
+            # Cup has been detected
+            if water_level < 20:
+                # Sensor not in cup / cup empty, politely remind.
+                show_led_colour(r=False, g=False, b=True)
+                get_sensor_into_cup(lcd)
+            elif ticks_till_reminder < 1:
+                # Sensor is back in cup, and the timer is done. Remind the user.
+                show_led_colour(r=False, g=True, b=False)
+                print("hi?")
+                remind_user_about_water(lcd)
+                ticks_till_reminder = 10
         else:
-            play_audio('water.wav')
+            show_led_colour(r=True, g=False, b=False)
 
+        time.sleep(tick_length_s)
 
-
-        time.sleep(1)
 except KeyboardInterrupt:
     print("Ctrl-C Pressed.")
 
