@@ -17,11 +17,11 @@ We need to install the necessary packages and configurations, and we can do that
    ./initialise.sh
    ```
    The script will:
-   - Create the necessary changes in raspi-config [pi-conig.sh](./pi-config.sh)
-   - Update & install necessary packages [apt.sh](./apt.sh)
-   - Create a virtual environment [venv.sh](./venv.sh)
-   - Install the packages in that virtual environment [pip.sh](./pip.sh)
-   - Add the virtual environment to your environment file (.bashrc) [bashrc.sh](./bashrc.sh)
+   - Create the necessary changes in raspi-config [pi-conig.sh](./scripts/pi-config.sh)
+   - Update & install necessary packages [apt.sh](./scripts/apt.sh)
+   - Create a virtual environment [venv.sh](./scripts/venv.sh)
+   - Install the packages in that virtual environment [pip.sh](./scripts/pip.sh)
+   - Add the virtual environment to your environment file (.bashrc) [bashrc.sh](./scripts/bashrc.sh)
 
 3. The system will reboot at the end of the script. This is so that the hardware configurations can be enabled.
 
