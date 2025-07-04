@@ -1,4 +1,5 @@
-sh
+#!/bin/bash
+
 if [ -z "$1" ]; then
   echo "Error: VENV_PATH argument not provided."
   exit 1

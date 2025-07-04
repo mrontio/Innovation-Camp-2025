@@ -2,28 +2,45 @@
 
 VENV_PATH="$HOME/hackathon-venv"
 
-descriptions=(
-    "Configure Raspberry Pi"
-    "Install required APT packages"
-    "Set up Python virtual environment"
-    "Install pip requirements"
-    "Configure .bashrc"
-)
-
 scripts="scripts/pi-config.sh scripts/apt.sh scripts/venv.sh scripts/pip.sh scripts/bashrc.sh"
 
-i=0
-for script in $scripts; do
-    desc="${descriptions[$i]}"
-    echo "\n=============================================="
-    echo "Running $script: $desc"
-    echo "==============================================\n"
+for script in $scripts;
+do
 
-    if ! ./"$script" "$VENV_PATH"; then
-        echo "Error: $script failed. Figure it out by looking into $script or asking Michail."
+    if [ -z "$script" ]; then
+        echo "\n\nError: script $script is missing, please clone the repository again."
         exit 1
     fi
-    i=$((i + 1))
+
+    echo
+    echo "=============================================="
+    echo "Running $script"
+    echo "=============================================="
+    echo
+
+    if ! ./"$script" "$VENV_PATH"; then
+        echo "\n\nError: $script failed. Figure it out by looking into $script or asking Michail."
+        exit 1
+    fi
 done
 
-echo "Initialisation completed sucessfully. Enjoy the hackathon."
+
+echo "\n\nInitialisation completed sucessfully. I will now have to reboot, and you will be ready to go.\nHave fun with the hackathon."
+
+
+for i in $(seq 10 -1 1); do
+    bars=$((20 - (2 * (10 - i))))
+    no_bars=$((20 - bars))
+    # Clear the line
+    printf '\r'
+    printf ' %.0s' {1..100}
+    printf '\r'
+    # Print the bar
+    printf 'REBOOTING IN %d SECONDS: [  ' $i
+    eval printf '=%.0s' {1..$bars}
+    eval printf '\ %.0s' {1..$no_bars}
+    printf ']'
+    sleep 1
+done
+
+sudo reboot

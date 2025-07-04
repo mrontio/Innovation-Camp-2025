@@ -5,11 +5,11 @@ if [ -z "$1" ]; then
 fi
 
 VENV_PATH="$1"
-STRING="source \"$VENV_PATH/bin/activate\"  # Added by venv activation script"
+STRING="source \"$VENV_PATH/bin/activate\""  # Added by venv activation script
 
 if grep -Fxq "$STRING" ~/.bashrc; then
   echo "Venv path already added to .bashrc"
-  exit 1
+  exit 0
 fi
 
 echo "$STRING" >> ~/.bashrc

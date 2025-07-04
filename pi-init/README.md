@@ -7,6 +7,7 @@ We need to install the necessary packages and configurations, and we can do that
 
 1. Pull the repository and enter into the installation directory
    ```bash
+   cd ~/Downloads
    git clone https://github.com/mrontio/ic-rpi.git
    cd ic-rpi/pi-init
    ```
