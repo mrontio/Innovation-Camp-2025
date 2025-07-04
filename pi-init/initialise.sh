@@ -10,7 +10,7 @@ descriptions=(
     "Configure .bashrc"
 )
 
-scripts="pi-config.sh apt.sh venv.sh pip.sh bashrc.sh"
+scripts="scripts/pi-config.sh scripts/apt.sh scripts/venv.sh scripts/pip.sh scripts/bashrc.sh"
 
 i=0
 for script in $scripts; do
