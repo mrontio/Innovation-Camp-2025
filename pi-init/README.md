@@ -23,9 +23,21 @@ We need to install the necessary packages and configurations, and we can do that
    - Install the packages in that virtual environment [pip.sh](./pip.sh)
    - Add the virtual environment to your environment file (.bashrc) [bashrc.sh](./bashrc.sh)
 
+3. The system will reboot at the end of the script. This is so that the hardware configurations can be enabled.
+
 3. And Voilà, you have a system ready to hack on.
 
 ## Re-creating the virtual environment
 Broke your pip installation? Don't worry, you can get back to a prepared virtual environment by running the following:
 
-TODO!
+1. Run
+```bash
+./reload-venv.sh
+```
+
+2. Re-source the environment
+```bash
+source ~/hackathon-venv/bin/activate
+```
+
+3. And install the rest of the required files. A dump all the packages of the old environment will be put in your ~/Downloads folder.
