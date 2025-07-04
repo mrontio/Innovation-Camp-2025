@@ -8,7 +8,7 @@ class ICTransport(ABC):
                  share_path: str = "~/ic-transport", # Please always provide absolute full path
                  timeout_s: float = 60,
                  sleep_time: float = 10):
-        
+
         self.share_path = share_path
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
@@ -23,7 +23,7 @@ class LaptopTransport(ICTransport):
                  hpc_share_path: str = "~/ic-transport", # Please always provide absolute full path
                  timeout_s: float = 60,
                  sleep_time: float = 10):
-        
+
         super().__init__("", timeout_s, sleep_time)
 
 
@@ -40,22 +40,29 @@ class LaptopTransport(ICTransport):
 
         self.retries_max = 5
 
+        print(f"Pi connection: attempt {pi_username}@{pi_address}.")
         # Setup Pi connection and sync file
-        self.pi_client, self.pi_sftp = self.__connectSFTP(pi_username, pi_address) # Defines: [self.client, self.sftp]
+        self.pi_client, self.pi_sftp = self.__connectSFTP(pi_username, pi_address, verbose=False) # Defines: [self.client, self.sftp]
         if not self.rexists(self.pi_sftp, self.pi_share_path):
             self.pi_sftp.mkdir(self.pi_share_path)
         if not self.rexists(self.pi_sftp, self.pi_sync):
             with self.pi_sftp.open(self.pi_sync, "w") as file:
                 pass
+        print(f"Pi connection: success.")
 
-        # Setup Pi connection and sync file
-        self.hpc_client, self.hpc_sftp = self.__connectSFTP(hpc_username, hpc_address) # Defines: [self.client, self.sftp]
+
+        # Setup HPC connection and sync file
+        print(f"HPC connection: attempt {hpc_username}@{hpc_address}.")
+        self.hpc_client, self.hpc_sftp = self.__connectSFTP(hpc_username, hpc_address, verbose=False) # Defines: [self.client, self.sftp]
+
         if not self.rexists(self.hpc_sftp, self.hpc_share_path):
             self.hpc_sftp.mkdir(self.hpc_share_path)
         if not self.rexists(self.hpc_sftp, self.hpc_sync):
             with self.hpc_sftp.open(self.hpc_sync, "w") as file:
                 pass
-        
+        print(f"HPC connection: success.")
+
+
     def __connectSFTP(self, username, address, verbose=True):
         done = False
         retries = 0
@@ -70,19 +77,19 @@ class LaptopTransport(ICTransport):
 
                 # Establish SSH Connection
                 if verbose:
-                    print("Trying SSH...")
+                    print(f"Connection: {username}@{address}.")
                 client = paramiko.SSHClient()
                 client.load_system_host_keys()
                 client.connect(address, username=username, timeout=self.timeout_s, channel_timeout=self.timeout_s)
                 if verbose:
-                    print("SSH Connected.")
+                    print(f"Connection: success.")
 
                 # Establish SFTP channel
                 if verbose:
-                    print("Trying SFTP...")
+                    print(f"SFTP: {username}@{address}.")
                 sftp = client.open_sftp()
                 if verbose:
-                    print("SFTP Connected.")
+                    print("SFTP: success.")
 
                 channel = sftp.get_channel()
                 channel.settimeout(self.timeout_s)
@@ -96,9 +103,9 @@ class LaptopTransport(ICTransport):
                 print(f"File I/O error: {e}")
             except Exception as e:
                 print(f"Could not connect: {e}")
-        
+
         return client, sftp
-    
+
     # https://stackoverflow.com/questions/850749/check-whether-a-path-exists-on-a-remote-host-using-paramiko
     def rexists(self, sftp, path):
         """os.path.exists for paramiko's SCP object"""
