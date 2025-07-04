@@ -6,14 +6,3 @@ This repository contains:
 - Example files for each of the sensors.
 
 We hope you enjoy this hackathon, and create something worth showing at the BSF!
-
-## On a brand new Raspbian image
-At the beginning, you will likely have a Raspbian image that only has an internet connection.
-Let's change that.
-
-1. Pull the repository
-```bash
-git clone <TODO>
-```
-
-2. Do the rest
