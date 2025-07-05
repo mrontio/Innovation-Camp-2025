@@ -31,7 +31,9 @@ Just like in the video, you need 3 things:
 
 When searching, make sure to note the part number down. It narrows the search a lot to exactly what you need.
 When asking ChatGPT queries, here's a good prompt to use:
-`I am building a Raspberry Pi 4b project with a breadboard. I will ask you to help me with connecting speciifc sensors. Specifically, I would like you to (A) Give me the wiring instructions in a table, (B) Give me a quick code sample which I want to use and (C) if you are able to access the internet, provide sources for the wiring diagram, thank you very much. For now, could you please give me instructions to use the sensor:`
+```
+I am building a Raspberry Pi 4b project with a breadboard. I will ask you to help me with connecting speciifc sensors. Specifically, I would like you to (A) Give me the wiring instructions in a table, (B) Give me a quick code sample which I want to use and (C) if you are able to access the internet, provide sources for the wiring diagram, thank you very much. For now, could you please give me instructions to use the sensor: <SENSOR>
+```
 
 Advice for LLMs
 - **DOUBLE CHECK WIRING**, it does get part numbers wrong.
