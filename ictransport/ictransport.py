@@ -1,6 +1,12 @@
 import paramiko
 from abc import ABC, abstractmethod
 import errno
+import numpy as np
+import io
+import re
+import time
+
+# TODO: Better way to identifying the destination sending to automatically
 
 class ICTransport(ABC):
 
@@ -13,6 +19,12 @@ class ICTransport(ABC):
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
     
+    def not_timeout(self, start_time, timeout_s):
+        if timeout_s:
+            return (time.time() - start_time < timeout_s)
+        else:
+            return True
+    
     @abstractmethod    
     def append_file(self, sftp, sync_file, string) -> None:
         pass
@@ -23,6 +35,14 @@ class ICTransport(ABC):
 
     @abstractmethod
     def clear_sync(self, sftp, sync_file) -> None:
+        pass
+
+    @abstractmethod
+    def send(self, n, pi) -> bool:
+        pass
+
+    @abstractmethod
+    def listen(self, pi, timeout_s=None) -> np.array:
         pass
 
 class LaptopTransport(ICTransport):
@@ -129,6 +149,17 @@ class LaptopTransport(ICTransport):
             raise
         else:
             return True
+    
+    def __reconnectSFTP(self, pi):
+        print("error: SSH connection lost, trying to re-establish...")
+        if pi:
+            self.pi_sftp.close()
+            self.pi_client.close()
+            self.pi_client, self.pi_sftp = self.__connectSFTP(self.pi_username, self.pi_address, verbose=True)
+        else:
+            self.hpc_sftp.close()
+            self.hpc_client.close()
+            self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=True)
       
     def append_file(self, sftp, sync_file, string):
         file = sftp.file(sync_file, "a", -1)
@@ -153,3 +184,75 @@ class LaptopTransport(ICTransport):
             print(f"Sync file {sync_file} has been successfully cleared")
         except Exception as e:
             print(f"Could not clear file {sync_file} due: {e}")
+
+    def __uniqueFileName(self, sftp) -> str:
+        paths = sftp.listdir(self.share_path)
+        pattern = re.compile(r"^([0-9]+)\.npy$")
+        filtered = [p for p in paths if pattern.match(p)]
+        if filtered:
+            filtered.sort(key=lambda x: int(pattern.match(x).group(1)), reverse=True)
+            m = pattern.match(filtered[0])
+            num = int(m.group(1)) + 1
+        else:
+            num = 1
+        return f"{num}.npy"
+
+    def send(self, n, pi) -> bool:
+        # Initialiase the buffer
+        # - Acts as a file for np to write to
+        if pi:
+            sftp = self.pi_sftp
+            sync_file = self.pi_sync
+        else:
+            sftp = self.hpc_sftp
+            sync_file = self.hpc_sync
+        
+        buf = io.BytesIO()
+        np.save(buf, n)
+        buf.seek(0)
+
+        # Retry loop
+        done = False
+        # Put buffer onto new file path with unique file name.
+        new_file_name = self.__uniqueFileName(sftp)
+        new_file_path = self.share_path + "/" + new_file_name
+        while not done:
+            try:
+                sftp.putfo(buf, new_file_path)
+                done = True
+            except (paramiko.SSHException, TimeoutError) as e:
+                self.__reconnectSFTP(pi)
+
+        return done
+    
+    def listen(self, pi, timeout_s=None) -> np.array:
+        if pi:
+            sftp = self.pi_sftp
+            sync_file = self.pi_sync
+        else:
+            sftp = self.hpc_sftp
+            sync_file = self.hpc_sync
+            
+        # Take start time of listen() call
+        start_time = time.time()
+
+        # Create buffer for np to write into
+        buf = io.BytesIO()
+        while self.not_timeout(start_time, timeout_s):
+            try:
+                # List the paths and sort them based on modification time (f.st_mtime)
+                paths = sftp.listdir_attr(self.share_path)
+                new_files = [f.filename for f in paths if f.st_mtime > start_time]
+                if len(new_files) > 0:
+                    # If we found files modified later than our start time:
+                    # take the first one and return it.
+                    new_file = new_files[0]
+                    new_file_path = self.share_path + "/" + new_file
+                    sftp.getfo(new_file_path, buf)
+                    buf.seek(0)
+                    array = np.load(buf)
+                    return array
+            except (paramiko.SSHException, TimeoutError) as e:
+                self.__reconnectSFTP(pi)
+            print("Timeout! No file was received back")
+            return None
