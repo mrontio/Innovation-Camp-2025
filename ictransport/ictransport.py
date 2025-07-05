@@ -5,17 +5,17 @@ import numpy as np
 import io
 import re
 import time
+import os
+from pathlib import Path
 
 # TODO: Better way to identifying the destination sending to automatically
 
 class ICTransport(ABC):
 
     def __init__(self,
-                 share_path: str = "~/ic-transport", # Please always provide absolute full path
                  timeout_s: float = 60,
                  sleep_time: float = 10):
 
-        self.share_path = share_path
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
     
@@ -56,7 +56,7 @@ class LaptopTransport(ICTransport):
                  timeout_s: float = 60,
                  sleep_time: float = 10):
 
-        super().__init__("", timeout_s, sleep_time)
+        super().__init__(timeout_s, sleep_time)
 
 
         self.pi_username = pi_username
@@ -185,8 +185,8 @@ class LaptopTransport(ICTransport):
         except Exception as e:
             print(f"Could not clear file {sync_file} due: {e}")
 
-    def __uniqueFileName(self, sftp) -> str:
-        paths = sftp.listdir(self.share_path)
+    def __uniqueFileName(self, sftp, share_path) -> str:
+        paths = sftp.listdir(share_path)
         pattern = re.compile(r"^([0-9]+)\.npy$")
         filtered = [p for p in paths if pattern.match(p)]
         if filtered:
@@ -203,9 +203,11 @@ class LaptopTransport(ICTransport):
         if pi:
             sftp = self.pi_sftp
             sync_file = self.pi_sync
+            share_path = self.pi_share_path
         else:
             sftp = self.hpc_sftp
             sync_file = self.hpc_sync
+            share_path =  self.hpc_share_path
         
         buf = io.BytesIO()
         np.save(buf, n)
@@ -214,8 +216,8 @@ class LaptopTransport(ICTransport):
         # Retry loop
         done = False
         # Put buffer onto new file path with unique file name.
-        new_file_name = self.__uniqueFileName(sftp)
-        new_file_path = self.share_path + "/" + new_file_name
+        new_file_name = self.__uniqueFileName(sftp, pi)
+        new_file_path = share_path + "/" + new_file_name
         while not done:
             try:
                 sftp.putfo(buf, new_file_path)
@@ -229,9 +231,11 @@ class LaptopTransport(ICTransport):
         if pi:
             sftp = self.pi_sftp
             sync_file = self.pi_sync
+            share_path = self.pi_share_path
         else:
             sftp = self.hpc_sftp
             sync_file = self.hpc_sync
+            share_path =  self.hpc_share_path
             
         # Take start time of listen() call
         start_time = time.time()
@@ -241,13 +245,13 @@ class LaptopTransport(ICTransport):
         while self.not_timeout(start_time, timeout_s):
             try:
                 # List the paths and sort them based on modification time (f.st_mtime)
-                paths = sftp.listdir_attr(self.share_path)
+                paths = sftp.listdir_attr(share_path)
                 new_files = [f.filename for f in paths if f.st_mtime > start_time]
                 if len(new_files) > 0:
                     # If we found files modified later than our start time:
                     # take the first one and return it.
                     new_file = new_files[0]
-                    new_file_path = self.share_path + "/" + new_file
+                    new_file_path = share_path + "/" + new_file
                     sftp.getfo(new_file_path, buf)
                     buf.seek(0)
                     array = np.load(buf)
@@ -256,3 +260,53 @@ class LaptopTransport(ICTransport):
                 self.__reconnectSFTP(pi)
             print("Timeout! No file was received back")
             return None
+
+class NodeTransport(ICTransport):
+    def __init__(self,
+                 pi: bool,
+                 share_path: str = "~/ic-transport", # Please always provide absolute full path
+                 timeout_s: float = 60,
+                 sleep_time: float = 10):
+
+        super().__init__(timeout_s, sleep_time)
+        self.share_path = share_path.rstrip("/")
+        self.sync_file = f"{share_path}/hpc_sync.log"
+
+        if not os.path.exists(self.share_path):
+            os.makedirs(self.share_path)
+
+        if not os.path.exists(self.sync_file):
+            Path(self.sync_file).touch()
+
+    def __uniqueFileName(self) -> str:
+        paths = os.listdir(self.share_path)
+        pattern = re.compile(r"^([0-9]+)\.npy$")
+        filtered = [p for p in paths if pattern.match(p)]
+        if filtered:
+            filtered.sort(key=lambda x: int(pattern.match(x).group(1)), reverse=True)
+            m = pattern.match(filtered[0])
+            num = int(m.group(1)) + 1
+        else:
+            num = 1
+        return f"{num}.npy"
+
+    def send(self, n, pi=None) -> bool:
+        new_file_name = self.__uniqueFileName()
+        path = self.share_path + "/" + new_file_name
+        np.save(path, n)
+        
+        return True
+    
+    def listen(self, pi=None, timeout_s=None) -> np.array:
+        start_time = time.time()
+
+        while self.not_timeout(start_time, timeout_s):
+            paths = Path(self.share_path).iterdir()
+            new_files = [f.name for f in paths if f.stat().st_mtime > start_time]
+            if len(new_files) > 0:
+                new_file = new_files[0]
+                array = np.load(self.share_path + "/" + new_file)
+
+                return array
+            
+            time.sleep(self.sleep_time)
