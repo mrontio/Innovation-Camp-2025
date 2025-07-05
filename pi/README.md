@@ -9,7 +9,7 @@ We hope you enjoy this hackathon, and create something worth showing at the BSF!
 
 ## Directory Layout
 
-- [pi-init/](./pi-init): Go here to initialise a new Raspberry Pi installation
-- [examples/](./examples): Examples provided to get you started
+- [initialisation/](./initialisation): Go here to initialise a new Raspberry Pi installation.
+- [examples/](./examples): Examples provided to get you started.
   - [examples/video-introduction/](./examples/video-introduction): The files from the hardware introduction video.
   - [examples/sensor-examples/](./examples/sensor-examples): Example files for a selection of sensors that you can copy and re-use.

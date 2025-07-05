@@ -9,7 +9,7 @@ We need to install the necessary packages and configurations, and we can do that
    ```bash
    cd ~/Downloads
    git clone https://github.com/mrontio/Innovation-Camp-2025.git
-   cd Innovation-Camp-2025/pi/pi-init/
+   cd Innovation-Camp-2025/pi/initialisation/
    ```
 
 2. Run the initialisation script
