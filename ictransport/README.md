@@ -11,7 +11,7 @@
       - Await 'Pi: 0001-sent'
       - Receive '0001.npy'
       - Write(pi_sync) 'Laptop: 0001-received'
-   2. [ ] Pi.send()
+   2. [x] Pi.send()
       - Write '0001.npy'
       - Write(pi_sync) 'Pi: 0001-sent'
       - [t] Awaiting 'Laptop: 0001-received'
@@ -36,7 +36,7 @@
       - Await 'HPC: 0001-out-sent'
       - Receive '0001-out.npy'
       - Return as np array.
-   2. [ ] HPC.send()
+   2. [x] HPC.send()
       - Write '0001-out.npy'
       - Write(hpc_sync) 'HPC: 0001-out-sent'
       - [t] Awaiting 'Laptop: 0001-out-received'

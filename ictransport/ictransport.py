@@ -10,6 +10,8 @@ from pathlib import Path
 
 # TODO: Better way to identifying the destination sending to automatically
 # TODO: Specify locations of log files when application starts
+# TODO: Ensure default of all timeouts is not None
+# TODO: Add timeout_s and sleep_time setters and getters?
 
 class ICTransport(ABC):
 
@@ -20,9 +22,9 @@ class ICTransport(ABC):
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
     
-    def not_timeout(self, start_time, timeout_s):
-        if timeout_s:
-            return (time.time() - start_time < timeout_s)
+    def not_timeout(self, start_time):
+        if self.timeout_s:
+            return (time.time() - start_time < self.timeout_s)
         else:
             return True
     
@@ -39,11 +41,15 @@ class ICTransport(ABC):
         pass
 
     @abstractmethod
+    def awaiting_after_send(self, expected_last_line, start_time, pi=None) -> bool:
+        pass
+
+    @abstractmethod
     def send(self, n, pi) -> bool:
         pass
 
     @abstractmethod
-    def listen(self, pi, timeout_s=None) -> np.array:
+    def listen(self, pi) -> np.array:
         pass
     
 
@@ -242,7 +248,7 @@ class LaptopTransport(ICTransport):
 
         return done
     
-    def listen(self, pi, timeout_s=None) -> np.array:
+    def listen(self, pi) -> np.array:
         sftp, sync_file, share_path = self.get_node_info(pi)
             
         # Take start time of listen() call
@@ -250,7 +256,7 @@ class LaptopTransport(ICTransport):
 
         # Create buffer for np to write into
         buf = io.BytesIO()
-        while self.not_timeout(start_time, timeout_s):
+        while self.not_timeout(start_time):
             try:
                 # List the paths and sort them based on modification time (f.st_mtime)
                 paths = sftp.listdir_attr(share_path)
@@ -326,18 +332,39 @@ class NodeTransport(ICTransport):
         except Exception as e:
             print(f"{self.node_type} Node: Could not clear file {self.sync_file} due: {e}")
 
-    def send(self, n, pi=None) -> bool:
-        new_file_name = self.__uniqueFileName()
-        path = self.share_path + "/" + new_file_name
-        np.save(path, n)
+    def awaiting_after_send(self, expected_last_line, start_time, pi=None):
+        """Ensure that something is received successfully
+        Uses the same global timeout"""
         
-        return True
+        while self.not_timeout(start_time):
+            last_line = self.read_last(pi)
+            if last_line == expected_last_line:
+                return True
+            time.sleep(self.sleep_time)
+
+        return False
+    
+    def send(self, n, pi=None):
+        start_time = time.time()
+        while self.not_timeout(start_time):
+            file_name = self.__uniqueFileName()
+            path = self.share_path + "/" + file_name
+            np.save(path, n)
+            
+            # Write acknowledgement
+            self.append_file(f"{self.share_path}/{file_name.replace(".npy", "")}-sent")
+
+            # Awaiting
+            if self.awaiting_after_send(f"Laptop: {self.share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+                return True
+        
+        return False
 
     
-    def listen(self, pi=None, timeout_s=None) -> np.array:
+    def listen(self, pi=None) -> np.array:
         start_time = time.time()
 
-        while self.not_timeout(start_time, timeout_s):
+        while self.not_timeout(start_time):
             paths = Path(self.share_path).iterdir()
             new_files = [f.name for f in paths if f.stat().st_mtime > start_time]
             if len(new_files) > 0:
