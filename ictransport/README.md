@@ -56,5 +56,7 @@
 
 ### Print the returned np array from HPC or further process it
 
+### Laptop.close_connection() for Pi and HPC SFTP Connections when done
+
 ### Failure modes
    - [t] = needs some sort of timeout for retry

@@ -44,6 +44,7 @@ class ICTransport(ABC):
     @abstractmethod
     def listen(self, pi, timeout_s=None) -> np.array:
         pass
+    
 
 class LaptopTransport(ICTransport):
     def __init__(self,
@@ -150,15 +151,20 @@ class LaptopTransport(ICTransport):
         else:
             return True
     
-    def __reconnectSFTP(self, pi):
-        print("error: SSH connection lost, trying to re-establish...")
+    def close_connection(self, pi) -> None:
         if pi:
             self.pi_sftp.close()
             self.pi_client.close()
-            self.pi_client, self.pi_sftp = self.__connectSFTP(self.pi_username, self.pi_address, verbose=True)
         else:
             self.hpc_sftp.close()
             self.hpc_client.close()
+    
+    def __reconnectSFTP(self, pi):
+        print("error: SSH connection lost, trying to re-establish...")
+        self.close_connection(pi)
+        if pi:
+            self.pi_client, self.pi_sftp = self.__connectSFTP(self.pi_username, self.pi_address, verbose=True)
+        else:
             self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=True)
       
     def append_file(self, sftp, sync_file, string):
@@ -296,6 +302,7 @@ class NodeTransport(ICTransport):
         np.save(path, n)
         
         return True
+
     
     def listen(self, pi=None, timeout_s=None) -> np.array:
         start_time = time.time()
