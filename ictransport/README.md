@@ -23,7 +23,7 @@
       - Write(hpc_sync) 'Laptop: 0001-sent'
       - [t] Awaiting 'HPC: 0001-received'
       - Return success
-   2. [ ] HPC.listen()
+   2. [x] HPC.listen()
       - Await 'Laptop: 0001-sent'
       - Receive '0001.npy'
       - Write(hpc_sync) 'HPC: 0001-received'
@@ -48,7 +48,7 @@
       - Write(pi_sync) 'Laptop: 0001-out-sent'
       - [t] Awaiting 'Pi: 0001-out-received'
       - Return success
-   2. [ ] Pi.listen()
+   2. [x] Pi.listen()
       - Await 'Laptop: 0001-out-sent'
       - Receive '0001-out.npy'
       - Write(pi_sync) 'Pi: 0001-out-received'

@@ -49,6 +49,10 @@ class ICTransport(ABC):
         pass
 
     @abstractmethod
+    def awaiting_before_listen(self, start_time, pi) -> str:
+        pass
+
+    @abstractmethod
     def listen(self, pi) -> np.array:
         pass
     
@@ -333,7 +337,7 @@ class NodeTransport(ICTransport):
             print(f"{self.node_type} Node: Could not clear file {self.sync_file} due: {e}")
 
     def awaiting_after_send(self, expected_last_line, start_time, pi=None):
-        """Ensure that something is received successfully
+        """Ensure that a file is received successfully
         Uses the same global timeout"""
         
         while self.not_timeout(start_time):
@@ -360,17 +364,40 @@ class NodeTransport(ICTransport):
         
         return False
 
+    def awaiting_before_listen(self, start_time, pi=None):
+        """Ensure that a file is sent before listening
+        Uses the same global timeout"""
+        while self.not_timeout(start_time):
+            last_line = self.read_last(pi)
+            if last_line.startswith("Laptop: ") and last_line.endswith("-sent"):
+                return last_line.replace("Laptop: ", "").replace("-sent", "").replace(self.share_path, "").strip()
+            time.sleep(self.sleep_time)
+
+        return ""
     
     def listen(self, pi=None) -> np.array:
         start_time = time.time()
 
-        while self.not_timeout(start_time):
-            paths = Path(self.share_path).iterdir()
-            new_files = [f.name for f in paths if f.stat().st_mtime > start_time]
-            if len(new_files) > 0:
-                new_file = new_files[0]
-                array = np.load(self.share_path + "/" + new_file)
+        print("Waiting confirmation from Laptop to start listening")
+        file_to_listen = self.awaiting_before_listen(start_time, pi)
+        if file_to_listen:
+            print("Confirmation received. Listening...")
+            while self.not_timeout(start_time):
+                paths = Path(self.share_path).iterdir()
+                files = [f.name for f in paths if f.stat().st_mtime > start_time]
+                if file_to_listen in files:
+                    array = np.load(self.share_path + "/" + file_to_listen)
 
-                return array
+                    # Write acknowledgement
+                    self.append_file(f"{self.share_path}/{file_to_listen.replace(".npy", "")}-received")
+
+                    return array
+                
+                time.sleep(self.sleep_time)
             
-            time.sleep(self.sleep_time)
+            print(f"{self.node_type}: Timeout! No file was received from Pi")
+            return None
+        
+        else:
+            print(f"{self.node_type}: Timeout! No file was sent or at least communicated that it was sent")
+            return None
