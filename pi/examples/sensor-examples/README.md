@@ -19,3 +19,21 @@ Here is the table with links to guides used (or chatgpt where applicable).
 
 
 If you have any questions about any of these, don't hesitate to ask Michail! (okay, maybe hesitate a little bit).
+
+## Oh no, the sensor I want to use is not in this list!
+
+That's the fun of it.
+The Pi ecosystem is so mature now that it is more than simple to look up what you need.
+Just like in the video, you need 3 things:
+1. A wiring diagram.
+2. Sample code.
+3. Someone to explain things to you in case you get lost.
+
+When searching, make sure to note the part number down. It narrows the search a lot to exactly what you need.
+When asking ChatGPT queries, here's a good prompt to use:
+`I am building a Raspberry Pi 4b project with a breadboard. I will ask you to help me with connecting speciifc sensors. Specifically, I would like you to (A) Give me the wiring instructions in a table, (B) Give me a quick code sample which I want to use and (C) if you are able to access the internet, provide sources for the wiring diagram, thank you very much. For now, could you please give me instructions to use the sensor:`
+
+Advice for LLMs
+- **DOUBLE CHECK WIRING**, it does get part numbers wrong.
+- Turn on web search. It's much better if it can find links for you to follow as they are more likely to get you a working version.
+- Only one sensor at a time. Do not ask it to hook up multiple sensors. You can abstract the working code into functions, and then ask it to combine it for you in whichever way.
