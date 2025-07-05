@@ -12,6 +12,18 @@ class ICTransport(ABC):
         self.share_path = share_path
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
+    
+    @abstractmethod    
+    def append_file(self, sftp, sync_file, string) -> None:
+        pass
+    
+    @abstractmethod
+    def read_last(self, sftp, sync_file) -> str:
+        pass
+
+    @abstractmethod
+    def clear_sync(self, sftp, sync_file) -> None:
+        pass
 
 class LaptopTransport(ICTransport):
     def __init__(self,
@@ -117,3 +129,27 @@ class LaptopTransport(ICTransport):
             raise
         else:
             return True
+      
+    def append_file(self, sftp, sync_file, string):
+        file = sftp.file(sync_file, "a", -1)
+        file.write(f"\nLaptop: {string}")
+        file.flush()
+        file.close()
+    
+    def read_last(self, sftp, sync_file):
+        file = sftp.file(sync_file, "r")
+        lines = file.readlines()
+        if len(lines) > 1:
+            out = lines[-1].strip()
+        else: # File is empty
+            out = ""
+        file.close()
+        return out
+
+    def clear_sync(self, sftp, sync_file):
+        try:
+            with sftp.open(sync_file, "w") as file:
+                pass
+            print(f"Sync file {sync_file} has been successfully cleared")
+        except Exception as e:
+            print(f"Could not clear file {sync_file} due: {e}")
