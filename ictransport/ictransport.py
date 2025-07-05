@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 # TODO: Better way to identifying the destination sending to automatically
+# TODO: Specify locations of log files when application starts
 
 class ICTransport(ABC):
 
@@ -26,15 +27,15 @@ class ICTransport(ABC):
             return True
     
     @abstractmethod    
-    def append_file(self, sftp, sync_file, string) -> None:
+    def append_file(self, string, pi) -> None:
         pass
     
     @abstractmethod
-    def read_last(self, sftp, sync_file) -> str:
+    def read_last(self, pi) -> str:
         pass
 
     @abstractmethod
-    def clear_sync(self, sftp, sync_file) -> None:
+    def clear_sync(self, pi) -> None:
         pass
 
     @abstractmethod
@@ -159,6 +160,18 @@ class LaptopTransport(ICTransport):
             self.hpc_sftp.close()
             self.hpc_client.close()
     
+    def get_node_info(self, pi):
+        if pi:
+            sftp = self.pi_sftp
+            sync_file = self.pi_sync
+            share_path = self.pi_share_path
+        else:
+            sftp = self.hpc_sftp
+            sync_file = self.hpc_sync
+            share_path =  self.hpc_share_path
+        
+        return sftp, sync_file, share_path
+    
     def __reconnectSFTP(self, pi):
         print("error: SSH connection lost, trying to re-establish...")
         self.close_connection(pi)
@@ -167,13 +180,15 @@ class LaptopTransport(ICTransport):
         else:
             self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=True)
       
-    def append_file(self, sftp, sync_file, string):
+    def append_file(self, string, pi):
+        sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "a", -1)
         file.write(f"\nLaptop: {string}")
         file.flush()
         file.close()
     
-    def read_last(self, sftp, sync_file):
+    def read_last(self, pi):
+        sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "r")
         lines = file.readlines()
         if len(lines) > 1:
@@ -183,7 +198,8 @@ class LaptopTransport(ICTransport):
         file.close()
         return out
 
-    def clear_sync(self, sftp, sync_file):
+    def clear_sync(self, pi):
+        sftp, sync_file, share_path = self.get_node_info(pi)
         try:
             with sftp.open(sync_file, "w") as file:
                 pass
@@ -206,14 +222,7 @@ class LaptopTransport(ICTransport):
     def send(self, n, pi) -> bool:
         # Initialiase the buffer
         # - Acts as a file for np to write to
-        if pi:
-            sftp = self.pi_sftp
-            sync_file = self.pi_sync
-            share_path = self.pi_share_path
-        else:
-            sftp = self.hpc_sftp
-            sync_file = self.hpc_sync
-            share_path =  self.hpc_share_path
+        sftp, sync_file, share_path = self.get_node_info(pi)
         
         buf = io.BytesIO()
         np.save(buf, n)
@@ -234,14 +243,7 @@ class LaptopTransport(ICTransport):
         return done
     
     def listen(self, pi, timeout_s=None) -> np.array:
-        if pi:
-            sftp = self.pi_sftp
-            sync_file = self.pi_sync
-            share_path = self.pi_share_path
-        else:
-            sftp = self.hpc_sftp
-            sync_file = self.hpc_sync
-            share_path =  self.hpc_share_path
+        sftp, sync_file, share_path = self.get_node_info(pi)
             
         # Take start time of listen() call
         start_time = time.time()
@@ -278,11 +280,18 @@ class NodeTransport(ICTransport):
         self.share_path = share_path.rstrip("/")
         self.sync_file = f"{share_path}/hpc_sync.log"
 
+        if pi:
+            self.node_type = "Pi"
+        else:
+            self.node_type = "HPC"
+
+        print(f"Starting {self.node_type} Node")
         if not os.path.exists(self.share_path):
             os.makedirs(self.share_path)
 
         if not os.path.exists(self.sync_file):
             Path(self.sync_file).touch()
+        print(f"{self.node_type} Node started.")
 
     def __uniqueFileName(self) -> str:
         paths = os.listdir(self.share_path)
@@ -295,6 +304,27 @@ class NodeTransport(ICTransport):
         else:
             num = 1
         return f"{num}.npy"
+    
+    def append_file(self, string, pi=None) -> None:
+        with open(self.sync_file, "a") as file:
+            file.write(f"\n{self.node_type}: {string}")
+    
+    def read_last(self, pi=None) -> str:
+        with open(self.sync_file, "r") as file:
+            lines = file.readlines()
+            if len(lines) > 1:
+                out = lines[-1].strip()
+            else:
+                out = ""
+            return out
+
+    def clear_sync(self, pi=None) -> None:
+        try:
+            with open(self.sync_file, "w") as file:
+                pass
+            print(f"{self.node_type} Node: Sync file {self.sync_file} has been successfully cleared")
+        except Exception as e:
+            print(f"{self.node_type} Node: Could not clear file {self.sync_file} due: {e}")
 
     def send(self, n, pi=None) -> bool:
         new_file_name = self.__uniqueFileName()
