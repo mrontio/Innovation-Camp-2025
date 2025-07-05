@@ -1,55 +1,60 @@
 ## How are we synchronising?
-- send(path: str, n: np.array): Bool
-- listen(path: str, timeout=None: int): (np.array, Bool)
-- Ideal flow:
-Phase one: Read from Pi
-   1. [ ] Laptop.listen(pi):
+### Phase Zero: Initialise Connections
+   1. [x] Laptop.init():
       - [t] Pi SFTP Connection
-      - Await '0001-sent'
-      - File '0001.npy' received
-      - Write(pi_sync) '0001-received'
+      - [t] HPC SFTP Connection
+
+### Observe a state using Pi
+
+### Phase one: Read from Pi
+   1. [ ] Laptop.listen(pi):
+      - Await 'Pi: 0001-sent'
+      - Receive '0001.npy'
+      - Write(pi_sync) 'Laptop: 0001-received'
    2. [ ] Pi.send()
-      - File '0001.npy' written'
-      - Write(pi_sync) '0001-sent'
-      - [t] Awaiting '0001-received'
-      - File '0001-recevied' exists
+      - Write '0001.npy'
+      - Write(pi_sync) 'Pi: 0001-sent'
+      - [t] Awaiting 'Laptop: 0001-received'
       - Return success
 
-Phase two: Send to HPC
+### Phase two: Send to HPC
    1. [ ] Laptop.send(hpc):
-      - [t] HPC SFTP Connection
-      - File '0001.npy' written'
-      - Write(hpc_sync) '0001-sent'
-      - [t] Awaiting '0001-received'
-      - File '0001-recevied' exists
+      - Write '0001.npy'
+      - Write(hpc_sync) 'Laptop: 0001-sent'
+      - [t] Awaiting 'HPC: 0001-received'
       - Return success
    2. [ ] HPC.listen()
-      - Await '0001-sent'
-      - File '0001.npy' received
-      - Write '0001-received'
+      - Await 'Laptop: 0001-sent'
+      - Receive '0001.npy'
+      - Write(hpc_sync) 'HPC: 0001-received'
+      - Return as np array
 
-Process '0001.npy'
+### Process '0001.npy' in HPC
 
-Phase three: Read from HPC
-   1. [ ] HPC.send()
-      - Write (fully) '0001-out.npy'
-      - Write(hpc_sync) '0001-out-sent'
-   2. [ ] Laptop.listen(hpc):
-      - Await '0001-out-sent'
+### Phase three: Read from HPC
+   1. [ ] Laptop.listen(hpc):
+      - Await 'HPC: 0001-out-sent'
       - Receive '0001-out.npy'
       - Return as np array.
+   2. [ ] HPC.send()
+      - Write '0001-out.npy'
+      - Write(hpc_sync) 'HPC: 0001-out-sent'
+      - [t] Awaiting 'Laptop: 0001-out-received'
+      - Return success
 
-Phase four: Send to Pi
+### Phase four: Send to Pi
    1. [ ] Laptop.send(pi):
-      - File '0001-out.npy' written'
-      - Write(pi_sync) '0001-out-sent'
-      - [t] Awaiting '0001-received'
-      - File '0001-out-recevied' exists
+      - Write '0001-out.npy'
+      - Write(pi_sync) 'Laptop: 0001-out-sent'
+      - [t] Awaiting 'Pi: 0001-out-received'
       - Return success
    2. [ ] Pi.listen()
-      - Await '0001-out-sent'
+      - Await 'Laptop: 0001-out-sent'
       - Receive '0001-out.npy'
-      - Return as np array.
+      - Write(pi_sync) 'Pi: 0001-out-received'
+      - Return as np array
 
-Failure modes
+### Print the returned np array from HPC or further process it
+
+### Failure modes
    - [t] = needs some sort of timeout for retry
