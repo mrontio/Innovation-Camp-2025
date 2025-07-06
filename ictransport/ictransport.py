@@ -364,7 +364,10 @@ class NodeTransport(ICTransport):
         if filtered:
             filtered.sort(key=lambda x: int(pattern.match(x).group(1)), reverse=True)
             m = pattern.match(filtered[0])
-            num = int(m.group(1)) + 1
+            if self.node_type == "HPC":
+                num = int(m.group(1))
+            else:
+                num = int(m.group(1)) + 1
         else:
             num = 1
         
