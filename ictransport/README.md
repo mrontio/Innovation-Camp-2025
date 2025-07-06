@@ -7,7 +7,7 @@
 #### Observe a state using Pi
 
 ### Phase One: Read from Pi
-   1. [ ] Laptop.listen(pi):
+   1. [x] Laptop.listen(pi):
       - Await 'Pi: 0001-sent'
       - Receive '0001.npy'
       - Write(pi_sync) 'Laptop: 0001-received'
@@ -32,7 +32,7 @@
 #### Process '0001.npy' in HPC
 
 ### Phase Three: Read from HPC
-   1. [ ] Laptop.listen(hpc):
+   1. [x] Laptop.listen(hpc):
       - Await 'HPC: 0001-out-sent'
       - Receive '0001-out.npy'
       - Return as np array.

@@ -252,32 +252,64 @@ class LaptopTransport(ICTransport):
 
         return done
     
+    def awaiting_before_listen(self, start_time, pi):
+        """Ensure that a file is sent before listening
+        Uses the same global timeout"""
+        if pi:
+            node_type = "Pi"
+            share_path = self.pi_share_path
+        else:
+            node_type = "HPC"
+            share_path = self.hpc_share_path
+        
+        while self.not_timeout(start_time):
+            last_line = self.read_last(pi)
+            if last_line.startswith(f"{node_type}: ") and last_line.endswith("-sent"):
+                return last_line.replace(f"{node_type}: ", "").replace("-sent", "").replace(share_path, "").strip()
+            time.sleep(self.sleep_time)
+
+        return ""
+    
     def listen(self, pi) -> np.array:
         sftp, sync_file, share_path = self.get_node_info(pi)
+
+        if pi:
+            node_type = "Pi"
+        else:
+            node_type = "HPC"
             
         # Take start time of listen() call
         start_time = time.time()
 
-        # Create buffer for np to write into
-        buf = io.BytesIO()
-        while self.not_timeout(start_time):
-            try:
-                # List the paths and sort them based on modification time (f.st_mtime)
-                paths = sftp.listdir_attr(share_path)
-                new_files = [f.filename for f in paths if f.st_mtime > start_time]
-                if len(new_files) > 0:
-                    # If we found files modified later than our start time:
-                    # take the first one and return it.
-                    new_file = new_files[0]
-                    new_file_path = share_path + "/" + new_file
-                    sftp.getfo(new_file_path, buf)
-                    buf.seek(0)
-                    array = np.load(buf)
-                    return array
-            except (paramiko.SSHException, TimeoutError) as e:
-                self.__reconnectSFTP(pi)
-            print("Timeout! No file was received back")
-            return None
+        print(f"Waiting confirmation from {node_type} to start listening")
+        file_to_listen = self.awaiting_before_listen(start_time, pi)
+        if file_to_listen:
+            print(f"Confirmation received from {node_type}. Listening...")
+            # Create buffer for np to write into
+            buf = io.BytesIO()
+            while self.not_timeout(start_time):
+                try:
+                    paths = sftp.listdir_attr(share_path)
+                    files = [f.filename for f in paths if f.st_mtime > start_time]
+                    if file_to_listen in files:
+                        file_path = share_path + "/" + file_to_listen
+                        sftp.getfo(file_path, buf)
+                        buf.seek(0)
+                        array = np.load(buf)
+
+                        # Write acknowledgement
+                        self.append_file(f"{share_path}/{file_to_listen.replace(".npy", "")}-received", pi)
+
+                        return array
+                except (paramiko.SSHException, TimeoutError) as e:
+                    self.__reconnectSFTP(pi)
+                
+                time.sleep(self.sleep_time)
+                print(f"Laptop: Timeout! No file was received back from {node_type}")
+                return None
+            else:
+                print(f"Laptop: Timeout! No file was sent or at least communicated that it was sent from {node_type}")
+                return None
 
 class NodeTransport(ICTransport):
     def __init__(self,
@@ -354,9 +386,10 @@ class NodeTransport(ICTransport):
     
     def send(self, n, pi=None):
         start_time = time.time()
+        file_name = self.__uniqueFileName()
+        path = self.share_path + "/" + file_name
+        
         while self.not_timeout(start_time):
-            file_name = self.__uniqueFileName()
-            path = self.share_path + "/" + file_name
             np.save(path, n)
             
             # Write acknowledgement
@@ -385,7 +418,7 @@ class NodeTransport(ICTransport):
         print("Waiting confirmation from Laptop to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
         if file_to_listen:
-            print("Confirmation received. Listening...")
+            print("Confirmation received from Laptop. Listening...")
             while self.not_timeout(start_time):
                 paths = Path(self.share_path).iterdir()
                 files = [f.name for f in paths if f.stat().st_mtime > start_time]
@@ -399,7 +432,7 @@ class NodeTransport(ICTransport):
                 
                 time.sleep(self.sleep_time)
             
-            print(f"{self.node_type}: Timeout! No file was received from Pi")
+            print(f"{self.node_type}: Timeout! No file was received from Laptop")
             return None
         
         else:
