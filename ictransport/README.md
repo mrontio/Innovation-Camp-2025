@@ -3,6 +3,15 @@
 
 To simplify the hackathon for you, we decided to create a semi-transparent layer to communicate numpy objects from Pi to HPC and back with the help of your laptop.
 
+## Startup Procedure (**important**)
+As this was written in about 24 hours of work, there is a huge dependency on the order of starting each process. From now on, make sure to start them as pictured:
+
+<p align="center"><img src="./img/startup.png" alt="startup diagram" title="startup" width="400" height="400"></p>
+
+1. The laptop is the central puzzle piece to this, make sure to start it first.
+2. The HPC is typically the listener. Start in second.
+3. The Pi requests from Iridis. Start it last, or whenever you need something processed.
+
 ## Installation
 You need to install ictransport on your *HPC instance* and *your laptop* to enable this communication layer (the Pi already has it installed).
 1. On your laptop
