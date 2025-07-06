@@ -249,7 +249,7 @@ class LaptopTransport(ICTransport):
         Uses the same global timeout"""
 
         while self.not_timeout(start_time):
-            if expected_last_line in self.read_sync_file(pi)
+            if expected_last_line in self.read_sync_file(pi):
                 return True
             time.sleep(self.sleep_time)
 
@@ -402,7 +402,7 @@ class NodeTransport(ICTransport):
     def read_sync_file(self, pi=None) -> str:
         with open(self.sync_file, "r") as file:
             lines = file.read().strip().split("\n")
-            return lines
+        return lines
 
     def clear_sync(self, pi=None) -> None:
         try:
@@ -417,7 +417,7 @@ class NodeTransport(ICTransport):
         Uses the same global timeout"""
 
         while self.not_timeout(start_time):
-            if expected_last_line in self.read_sync_file(pi)
+            if expected_last_line in self.read_sync_file(pi):
                 return True
             time.sleep(self.sleep_time)
 
