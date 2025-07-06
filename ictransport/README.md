@@ -18,7 +18,7 @@
       - Return success
 
 ### Phase Two: Send to HPC
-   1. [ ] Laptop.send(hpc):
+   1. [x] Laptop.send(hpc):
       - Write '0001.npy'
       - Write(hpc_sync) 'Laptop: 0001-sent'
       - [t] Awaiting 'HPC: 0001-received'
@@ -43,7 +43,7 @@
       - Return success
 
 ### Phase Four: Send to Pi
-   1. [ ] Laptop.send(pi):
+   1. [x] Laptop.send(pi):
       - Write '0001-out.npy'
       - Write(pi_sync) 'Laptop: 0001-out-sent'
       - [t] Awaiting 'Pi: 0001-out-received'

@@ -12,6 +12,8 @@ from pathlib import Path
 # TODO: Specify locations of log files when application starts
 # TODO: Ensure default of all timeouts is not None
 # TODO: Add timeout_s and sleep_time setters and getters?
+# TODO: Add better timeout to listening and before listening so both don't share and send
+# TODO: Add sleep throughout
 
 class ICTransport(ABC):
 
@@ -41,7 +43,7 @@ class ICTransport(ABC):
         pass
 
     @abstractmethod
-    def awaiting_after_send(self, expected_last_line, start_time, pi=None) -> bool:
+    def awaiting_after_send(self, expected_last_line, start_time, pi) -> bool:
         pass
 
     @abstractmethod
@@ -228,29 +230,50 @@ class LaptopTransport(ICTransport):
         else:
             num = 1
         return f"{num}.npy"
+    
+    def awaiting_after_send(self, expected_last_line, start_time, pi):
+        """Ensure that a file is received successfully
+        Uses the same global timeout"""
+        
+        while self.not_timeout(start_time):
+            last_line = self.read_last(pi)
+            if last_line == expected_last_line:
+                return True
+            time.sleep(self.sleep_time)
+
+        return False
 
     def send(self, n, pi) -> bool:
         # Initialiase the buffer
         # - Acts as a file for np to write to
         sftp, sync_file, share_path = self.get_node_info(pi)
+        if pi:
+            node_type = "Pi"
+        else:
+            node_type = "HPC"
+
+        start_time = time.time()
         
         buf = io.BytesIO()
         np.save(buf, n)
         buf.seek(0)
 
-        # Retry loop
-        done = False
         # Put buffer onto new file path with unique file name.
-        new_file_name = self.__uniqueFileName(sftp, pi)
-        new_file_path = share_path + "/" + new_file_name
-        while not done:
+        file_name = self.__uniqueFileName(sftp, pi)
+        file_path = share_path + "/" + file_name
+        while self.not_timeout(start_time):
             try:
-                sftp.putfo(buf, new_file_path)
-                done = True
+                sftp.putfo(buf, file_path)
+                
+                # Write acknowledgement
+                self.append_file(f"{share_path}/{file_name.replace(".npy", "")}-sent", pi)
+
+                if self.awaiting_after_send(f"{node_type}: {share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+                    return True
             except (paramiko.SSHException, TimeoutError) as e:
                 self.__reconnectSFTP(pi)
 
-        return done
+        return False
     
     def awaiting_before_listen(self, start_time, pi):
         """Ensure that a file is sent before listening
@@ -393,7 +416,7 @@ class NodeTransport(ICTransport):
             np.save(path, n)
             
             # Write acknowledgement
-            self.append_file(f"{self.share_path}/{file_name.replace(".npy", "")}-sent")
+            self.append_file(f"{self.share_path}/{file_name.replace(".npy", "")}-sent", pi)
 
             # Awaiting
             if self.awaiting_after_send(f"Laptop: {self.share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
@@ -426,7 +449,7 @@ class NodeTransport(ICTransport):
                     array = np.load(self.share_path + "/" + file_to_listen)
 
                     # Write acknowledgement
-                    self.append_file(f"{self.share_path}/{file_to_listen.replace(".npy", "")}-received")
+                    self.append_file(f"{self.share_path}/{file_to_listen.replace(".npy", "")}-received", pi)
 
                     return array
                 
