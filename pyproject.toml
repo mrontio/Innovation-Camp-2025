@@ -1,0 +1,21 @@
+[project]
+name = "ictransport"
+version = "0.1.0"
+description = "A python package for the Innovation Camp HPC <-> Laptop <-> Pi file transport utilities."
+authors = [
+]
+dependencies = [
+  "numpy",
+  "paramiko",
+]
+requires-python = ">=3.7"
+
+[tool.setuptools]
+packages = ["ictransport"]
+
+[tool.setuptools.package-data]
+ictransport = ["ictransport.py"]
+
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"

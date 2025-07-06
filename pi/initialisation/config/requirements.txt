@@ -1,0 +1,7 @@
+adafruit-circuitpython-dht
+rpi-lcd
+mpu6050
+matplotlib
+scipy
+numpy
+matplotlib
