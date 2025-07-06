@@ -350,12 +350,13 @@ class NodeTransport(ICTransport):
 
         super().__init__(timeout_s, sleep_time)
         self.share_path = share_path.rstrip("/")
-        self.sync_file = f"{share_path}/hpc_sync.log"
 
         if pi:
             self.node_type = "Pi"
+            self.sync_file = f"{share_path}/pi_sync.log"
         else:
             self.node_type = "HPC"
+            self.sync_file = f"{share_path}/hpc_sync.log"
 
         print(f"Starting {self.node_type} Node")
         if not os.path.exists(self.share_path):
@@ -419,16 +420,20 @@ class NodeTransport(ICTransport):
         file_name = self.__uniqueFileName()
         path = self.share_path + "/" + file_name
         
+        print(f"{self.node_type}: Sending...")
         while self.not_timeout(start_time):
             np.save(path, n)
             
             # Write acknowledgement
             self.append_file(f"{self.share_path}/{file_name.replace(".npy", "")}-sent", pi)
 
+            print(f"{self.node_type}: Waiting for confirmation from Laptop")
             # Awaiting
             if self.awaiting_after_send(f"Laptop: {self.share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+                print(f"{self.node_type}: File was sent sucessfully to Laptop")
                 return True
         
+        print(f"{self.node_type}: Timeout! It seems that the file was not sent successfully")
         return False
 
     def awaiting_before_listen(self, start_time, pi=None):
@@ -445,10 +450,10 @@ class NodeTransport(ICTransport):
     def listen(self, pi=None) -> np.array:
         start_time = time.time()
 
-        print("Waiting confirmation from Laptop to start listening")
+        print(f"{self.node_type}: Waiting confirmation from Laptop to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
         if file_to_listen:
-            print("Confirmation received from Laptop. Listening...")
+            print(f"{self.node_type}: Confirmation received from Laptop. Listening...")
             while self.not_timeout(start_time):
                 paths = Path(self.share_path).iterdir()
                 files = [f.name for f in paths if f.stat().st_mtime > start_time]
