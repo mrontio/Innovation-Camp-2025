@@ -420,7 +420,10 @@ class NodeTransport(ICTransport):
         Uses the same global timeout"""
 
         while self.not_timeout(start_time):
-            if expected_last_line in self.read_sync_file(pi):
+            last_lines = self.read_sync_file(pi)
+            print(last_lines)
+            print(expected_last_line)
+            if expected_last_line in last_lines:
                 return True
             time.sleep(self.sleep_time)
 
