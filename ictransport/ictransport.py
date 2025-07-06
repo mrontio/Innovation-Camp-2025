@@ -23,17 +23,17 @@ class ICTransport(ABC):
 
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
-    
+
     def not_timeout(self, start_time):
         if self.timeout_s:
             return (time.time() - start_time < self.timeout_s)
         else:
             return True
-    
-    @abstractmethod    
+
+    @abstractmethod
     def append_file(self, string, pi) -> None:
         pass
-    
+
     @abstractmethod
     def read_last(self, pi) -> str:
         pass
@@ -57,7 +57,7 @@ class ICTransport(ABC):
     @abstractmethod
     def listen(self, pi) -> np.array:
         pass
-    
+
 
 class LaptopTransport(ICTransport):
     def __init__(self,
@@ -163,7 +163,7 @@ class LaptopTransport(ICTransport):
             raise
         else:
             return True
-    
+
     def close_connection(self, pi) -> None:
         if pi:
             self.pi_sftp.close()
@@ -171,7 +171,7 @@ class LaptopTransport(ICTransport):
         else:
             self.hpc_sftp.close()
             self.hpc_client.close()
-    
+
     def get_node_info(self, pi):
         if pi:
             node_type = "Pi"
@@ -183,9 +183,9 @@ class LaptopTransport(ICTransport):
             sftp = self.hpc_sftp
             sync_file = self.hpc_sync
             share_path = self.hpc_share_path
-        
+
         return node_type, sftp, sync_file, share_path
-    
+
     def __reconnectSFTP(self, pi):
         print("error: SSH connection lost, trying to re-establish...")
         self.close_connection(pi)
@@ -193,14 +193,14 @@ class LaptopTransport(ICTransport):
             self.pi_client, self.pi_sftp = self.__connectSFTP(self.pi_username, self.pi_address, verbose=True)
         else:
             self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=True)
-      
+
     def append_file(self, string, pi):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "a", -1)
         file.write(f"\nLaptop: {string}")
         file.flush()
         file.close()
-    
+
     def read_last(self, pi):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "r")
@@ -232,11 +232,11 @@ class LaptopTransport(ICTransport):
         else:
             num = 1
         return f"{num}.npy"
-    
+
     def awaiting_after_send(self, expected_last_line, start_time, pi):
         """Ensure that a file is received successfully
         Uses the same global timeout"""
-        
+
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line == expected_last_line:
@@ -251,7 +251,7 @@ class LaptopTransport(ICTransport):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
 
         start_time = time.time()
-        
+
         buf = io.BytesIO()
         np.save(buf, n)
         buf.seek(0)
@@ -263,20 +263,20 @@ class LaptopTransport(ICTransport):
         while self.not_timeout(start_time):
             try:
                 sftp.putfo(buf, file_path)
-                
+
                 # Write acknowledgement
-                self.append_file(f"{share_path}/{file_name.replace(".npy", "")}-sent", pi)
+                self.append_file(f"{share_path}/{file_name.replace('.npy', '')}-sent", pi)
 
                 print(f"Laptop: Waiting for confirmation from {node_type}")
-                if self.awaiting_after_send(f"{node_type}: {share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+                if self.awaiting_after_send(f"{node_type}: {share_path}/{file_name.replace('.npy', '')}-received", start_time, pi):
                     print(f"Laptop: File was sent sucessfully to {node_type}")
                     return True
             except (paramiko.SSHException, TimeoutError) as e:
                 self.__reconnectSFTP(pi)
-        
+
         print(f"Laptop: Timeout! It seems that the file was not sent successfully")
         return False
-    
+
     def awaiting_before_listen(self, start_time, pi):
         """Ensure that a file is sent before listening
         Uses the same global timeout"""
@@ -286,7 +286,7 @@ class LaptopTransport(ICTransport):
         else:
             node_type = "HPC"
             share_path = self.hpc_share_path
-        
+
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line.startswith(f"{node_type}: ") and last_line.endswith("-sent"):
@@ -295,10 +295,10 @@ class LaptopTransport(ICTransport):
             time.sleep(self.sleep_time)
 
         return ""
-    
+
     def listen(self, pi) -> np.array:
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
-            
+
         # Take start time of listen() call
         start_time = time.time()
 
@@ -319,12 +319,12 @@ class LaptopTransport(ICTransport):
                         array = np.load(buf)
 
                         # Write acknowledgement
-                        self.append_file(f"{share_path}/{file_to_listen.replace(".npy", "")}-received", pi)
+                        self.append_file(f"{share_path}/{file_to_listen.replace('.npy', '')}-received", pi)
 
                         return array
                 except (paramiko.SSHException, TimeoutError) as e:
                     self.__reconnectSFTP(pi)
-                
+
                 time.sleep(self.sleep_time)
             print(f"Laptop: Timeout! No file was received back from {node_type}")
             return None
@@ -336,8 +336,8 @@ class NodeTransport(ICTransport):
     def __init__(self,
                  pi: bool,
                  share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 timeout_s: float = 60,
-                 sleep_time: float = 10):
+                 timeout_s: float = None,
+                 sleep_time: float = 1):
 
         super().__init__(timeout_s, sleep_time)
         self.share_path = share_path.rstrip("/")
@@ -370,16 +370,16 @@ class NodeTransport(ICTransport):
                 num = int(m.group(1)) + 1
         else:
             num = 1
-        
+
         if self.node_type == "HPC":
             return f"{num}-out.npy"
         else:
             return f"{num}.npy"
-    
+
     def append_file(self, string, pi=None) -> None:
         with open(self.sync_file, "a") as file:
             file.write(f"\n{self.node_type}: {string}")
-    
+
     def read_last(self, pi=None) -> str:
         with open(self.sync_file, "r") as file:
             lines = file.read().strip().split("\n")
@@ -400,7 +400,7 @@ class NodeTransport(ICTransport):
     def awaiting_after_send(self, expected_last_line, start_time, pi=None):
         """Ensure that a file is received successfully
         Uses the same global timeout"""
-        
+
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line == expected_last_line:
@@ -408,25 +408,25 @@ class NodeTransport(ICTransport):
             time.sleep(self.sleep_time)
 
         return False
-    
+
     def send(self, n, pi=None):
         start_time = time.time()
         file_name = self.__uniqueFileName()
         path = self.share_path + "/" + file_name
-        
+
         print(f"{self.node_type}: Sending...")
         while self.not_timeout(start_time):
             np.save(path, n)
-            
+
             # Write acknowledgement
-            self.append_file(f"{self.share_path}/{file_name.replace(".npy", "")}-sent", pi)
+            self.append_file(f"{self.share_path}/{file_name.replace('.npy', '')}-sent", pi)
 
             print(f"{self.node_type}: Waiting for confirmation from Laptop")
             # Awaiting
-            if self.awaiting_after_send(f"Laptop: {self.share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+            if self.awaiting_after_send(f"Laptop: {self.share_path}/{file_name.replace('.npy', '')}-received", start_time, pi):
                 print(f"{self.node_type}: File was sent sucessfully to Laptop")
                 return True
-        
+
         print(f"{self.node_type}: Timeout! It seems that the file was not sent successfully")
         return False
 
@@ -440,7 +440,7 @@ class NodeTransport(ICTransport):
             time.sleep(self.sleep_time)
 
         return ""
-    
+
     def listen(self, pi=None) -> np.array:
         start_time = time.time()
 
@@ -455,15 +455,15 @@ class NodeTransport(ICTransport):
                     array = np.load(self.share_path + "/" + file_to_listen)
 
                     # Write acknowledgement
-                    self.append_file(f"{self.share_path}/{file_to_listen.replace(".npy", "")}-received", pi)
+                    self.append_file(f"{self.share_path}/{file_to_listen.replace('.npy', '')}-received", pi)
 
                     return array
-                
+
                 time.sleep(self.sleep_time)
-            
+
             print(f"{self.node_type}: Timeout! No file was received from Laptop")
             return None
-        
+
         else:
             print(f"{self.node_type}: Timeout! No file was sent or at least communicated that it was sent")
             return None
