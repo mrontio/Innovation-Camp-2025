@@ -264,10 +264,9 @@ class LaptopTransport(ICTransport):
             try:
                 sftp.putfo(buf, file_path)
 
+                time.sleep(5)
                 # Write acknowledgement
                 self.append_file(f"{share_path}/{file_name.replace('.npy', '')}-sent", pi)
-
-                time.sleep(5)
 
                 print(f"Laptop: Waiting for confirmation from {node_type}")
                 if self.awaiting_after_send(f"{node_type}: {share_path}/{file_name.replace('.npy', '')}-received", start_time, pi):
@@ -323,7 +322,6 @@ class LaptopTransport(ICTransport):
                         # Write acknowledgement
                         self.append_file(f"{share_path}/{file_to_listen.replace('.npy', '')}-received", pi)
 
-                        time.sleep(5)
                         return array
                 except (paramiko.SSHException, TimeoutError) as e:
                     self.__reconnectSFTP(pi)
@@ -421,10 +419,9 @@ class NodeTransport(ICTransport):
         while self.not_timeout(start_time):
             np.save(path, n)
 
+            time.sleep(5)
             # Write acknowledgement
             self.append_file(f"{self.share_path}/{file_name.replace('.npy', '')}-sent", pi)
-
-            time.sleep(5)
 
             print(f"{self.node_type}: Waiting for confirmation from Laptop")
             # Awaiting
@@ -458,11 +455,9 @@ class NodeTransport(ICTransport):
                 files = [f.name for f in paths if f.stat().st_mtime > start_time]
                 if file_to_listen in files:
                     array = np.load(self.share_path + "/" + file_to_listen)
-
+                    
                     # Write acknowledgement
                     self.append_file(f"{self.share_path}/{file_to_listen.replace('.npy', '')}-received", pi)
-
-                    time.sleep(5)
 
                     return array
 
