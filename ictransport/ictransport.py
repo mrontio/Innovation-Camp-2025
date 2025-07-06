@@ -7,6 +7,20 @@ import re
 import time
 import os
 from pathlib import Path
+from typing import Optional
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - fallback for older versions
+    import tomli as tomllib
+
+# Load default configuration from config.toml if present
+_CONFIG_PATH = Path(__file__).resolve().parent / "config.toml"
+if _CONFIG_PATH.exists():
+    with open(_CONFIG_PATH, "rb") as _f:
+        _CONFIG = tomllib.load(_f)
+else:
+    _CONFIG = {}
 
 # TODO: Better way to identifying the destination sending to automatically
 # TODO: Specify locations of log files when application starts
@@ -61,34 +75,36 @@ class ICTransport(ABC):
 
 class LaptopTransport(ICTransport):
     def __init__(self,
-                 pi_username: str,
-                 hpc_username: str,
-                 pi_address: str,
-                 hpc_address: str,
-                 pi_share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 hpc_share_path: str = "~/ic-transport", # Please always provide absolute full path
+                 pi_username: Optional[str] = None,
+                 hpc_username: Optional[str] = None,
+                 pi_address: Optional[str] = None,
+                 hpc_address: Optional[str] = None,
+                 pi_share_path: Optional[str] = None,  # Please always provide absolute full path
+                 hpc_share_path: Optional[str] = None,  # Please always provide absolute full path
                  timeout_s: float = 120,
                  sleep_time: float = 5):
 
         super().__init__(timeout_s, sleep_time)
 
+        cfg_pi = _CONFIG.get("pi", {})
+        cfg_hpc = _CONFIG.get("hpc", {})
 
-        self.pi_username = pi_username
-        self.hpc_username = hpc_username
-        self.pi_address = pi_address
-        self.hpc_address = hpc_address
+        self.pi_username = pi_username if pi_username is not None else cfg_pi.get("username", "")
+        self.hpc_username = hpc_username if hpc_username is not None else cfg_hpc.get("username", "")
+        self.pi_address = pi_address if pi_address is not None else cfg_pi.get("address", "")
+        self.hpc_address = hpc_address if hpc_address is not None else cfg_hpc.get("address", "")
 
-        self.pi_share_path = pi_share_path.rstrip("/")
-        self.hpc_share_path = hpc_share_path.rstrip("/")
+        self.pi_share_path = (pi_share_path if pi_share_path is not None else cfg_pi.get("share_path", "~/ic-transport")).rstrip("/")
+        self.hpc_share_path = (hpc_share_path if hpc_share_path is not None else cfg_hpc.get("share_path", "~/ic-transport")).rstrip("/")
 
-        self.pi_sync = f"{pi_share_path}/pi_sync.log"
-        self.hpc_sync = f"{hpc_share_path}/hpc_sync.log"
+        self.pi_sync = f"{self.pi_share_path}/pi_sync.log"
+        self.hpc_sync = f"{self.hpc_share_path}/hpc_sync.log"
 
         self.retries_max = 5
 
-        print(f"Pi connection: attempt {pi_username}@{pi_address}.")
+        print(f"Pi connection: attempt {self.pi_username}@{self.pi_address}.")
         # Setup Pi connection and sync file
-        self.pi_client, self.pi_sftp = self.__connectSFTP(pi_username, pi_address, verbose=False) # Defines: [self.client, self.sftp]
+        self.pi_client, self.pi_sftp = self.__connectSFTP(self.pi_username, self.pi_address, verbose=False) # Defines: [self.client, self.sftp]
         if not self.rexists(self.pi_sftp, self.pi_share_path):
             self.pi_sftp.mkdir(self.pi_share_path)
         if not self.rexists(self.pi_sftp, self.pi_sync):
@@ -98,8 +114,8 @@ class LaptopTransport(ICTransport):
 
 
         # Setup HPC connection and sync file
-        print(f"HPC connection: attempt {hpc_username}@{hpc_address}.")
-        self.hpc_client, self.hpc_sftp = self.__connectSFTP(hpc_username, hpc_address, verbose=False) # Defines: [self.client, self.sftp]
+        print(f"HPC connection: attempt {self.hpc_username}@{self.hpc_address}.")
+        self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=False) # Defines: [self.client, self.sftp]
 
         if not self.rexists(self.hpc_sftp, self.hpc_share_path):
             self.hpc_sftp.mkdir(self.hpc_share_path)
@@ -337,19 +353,23 @@ class LaptopTransport(ICTransport):
 class NodeTransport(ICTransport):
     def __init__(self,
                  pi: bool,
-                 share_path: str = "~/ic-transport", # Please always provide absolute full path
+                 share_path: Optional[str] = None,  # Please always provide absolute full path
                  timeout_s: float = 60,
                  sleep_time: float = 10):
 
         super().__init__(timeout_s, sleep_time)
+        cfg = _CONFIG.get("pi" if pi else "hpc", {})
+        if share_path is None:
+            share_path = cfg.get("share_path", "~/ic-transport")
+
         self.share_path = share_path.rstrip("/")
 
         if pi:
             self.node_type = "Pi"
-            self.sync_file = f"{share_path}/pi_sync.log"
+            self.sync_file = f"{self.share_path}/pi_sync.log"
         else:
             self.node_type = "HPC"
-            self.sync_file = f"{share_path}/hpc_sync.log"
+            self.sync_file = f"{self.share_path}/hpc_sync.log"
 
         print(f"Starting {self.node_type} Node")
         if not os.path.exists(self.share_path):

@@ -1,0 +1,9 @@
+[pi]
+username = "pi"
+address = "raspberrypi.local"
+share_path = "~/ic-transport"
+
+[hpc]
+username = "hpcuser"
+address = "hpc.example.com"
+share_path = "~/ic-transport"
