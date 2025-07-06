@@ -67,8 +67,8 @@ class LaptopTransport(ICTransport):
                  hpc_address: str,
                  pi_share_path: str = "~/ic-transport", # Please always provide absolute full path
                  hpc_share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 timeout_s: float = 60,
-                 sleep_time: float = 10):
+                 timeout_s: float = 120,
+                 sleep_time: float = 5):
 
         super().__init__(timeout_s, sleep_time)
 
@@ -202,8 +202,8 @@ class LaptopTransport(ICTransport):
     def read_last(self, pi):
         sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "r")
-        lines = file.readlines()
-        if len(lines) > 1:
+        lines = file.read().decode().strip().split("\n")
+        if len(lines) > 0:
             out = lines[-1].strip()
         else: # File is empty
             out = ""
@@ -288,7 +288,7 @@ class LaptopTransport(ICTransport):
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line.startswith(f"{node_type}: ") and last_line.endswith("-sent"):
-                return last_line.replace(f"{node_type}: ", "").replace("-sent", "").replace(share_path, "").strip()
+                return last_line.replace(f"{node_type}: ", "").replace("-sent", "").replace(share_path, "").strip() + ".npy"
             time.sleep(self.sleep_time)
 
         return ""
@@ -328,11 +328,11 @@ class LaptopTransport(ICTransport):
                     self.__reconnectSFTP(pi)
                 
                 time.sleep(self.sleep_time)
-                print(f"Laptop: Timeout! No file was received back from {node_type}")
-                return None
-            else:
-                print(f"Laptop: Timeout! No file was sent or at least communicated that it was sent from {node_type}")
-                return None
+            print(f"Laptop: Timeout! No file was received back from {node_type}")
+            return None
+        else:
+            print(f"Laptop: Timeout! No file was sent or at least communicated that it was sent from {node_type}")
+            return None
 
 class NodeTransport(ICTransport):
     def __init__(self,
@@ -380,8 +380,8 @@ class NodeTransport(ICTransport):
     
     def read_last(self, pi=None) -> str:
         with open(self.sync_file, "r") as file:
-            lines = file.readlines()
-            if len(lines) > 1:
+            lines = file.read().strip().split("\n")
+            if len(lines) > 0:
                 out = lines[-1].strip()
             else:
                 out = ""
@@ -430,7 +430,7 @@ class NodeTransport(ICTransport):
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line.startswith("Laptop: ") and last_line.endswith("-sent"):
-                return last_line.replace("Laptop: ", "").replace("-sent", "").replace(self.share_path, "").strip()
+                return last_line.replace("Laptop: ", "").replace("-sent", "").replace(self.share_path, "").strip() + ".npy"
             time.sleep(self.sleep_time)
 
         return ""
