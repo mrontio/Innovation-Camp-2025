@@ -1,8 +1,10 @@
 from ictransport import NodeTransport
 import numpy as np
+import getpass
 
 # Ensure to use the same file used when initialising Laptop
-pi_share_path = "" # Please use an absolute path
+username = getpass.getuser()
+pi_share_path = f"/home/{username}/ictransport" # Please use an absolute path
 
 print("Initialising Pi!")
 pi = NodeTransport(pi=True, share_path=pi_share_path)
