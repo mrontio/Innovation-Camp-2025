@@ -9,6 +9,8 @@ This repository contains:
 
 We hope you enjoy this hackathon, and create something worth showing at the BSF and beyond!
 
+## (Important) Information to access the exclusive node will be provided on Tuesday alongside instructions of how to reflect that on your [submitMe.slurm file](./ic25Tutorial/submitMe.slurm).
+
 ## Directory Layout
 
 - [ic25Tutorial/submitMe.slurm](./ic25Tutorial/submitMe.slurm): A slurm file template that you can utilise and adjust when submitting your jobs to HPC. It only includes some of the important #SBATCH settings.
