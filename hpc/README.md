@@ -9,7 +9,7 @@ This repository contains:
 
 We hope you enjoy this hackathon, and create something worth showing at the BSF and beyond!
 
-## (Important) Information to access the exclusive node will be provided on Tuesday alongside instructions of how to reflect that on your [submitMe.slurm file](./ic25Tutorial/submitMe.slurm).
+## (Important) Information to access the exclusive node will be provided below on Tuesday alongside instructions of how to reflect that on your [submitMe.slurm file](./ic25Tutorial/submitMe.slurm).
 
 ## Directory Layout
 
