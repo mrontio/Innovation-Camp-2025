@@ -10421,7 +10421,7 @@
        xml:space="preserve"
        transform="scale(0.26458333)"
        id="text4633"
-       style="font-family:Arial;font-size:42.66666667px;line-height:1.25;letter-spacing:0px;word-spacing:0px;-inkscape-font-specification:Arial;white-space:pre;shape-inside:url(#rect4635)" /><path
+       style="font-size:42.6667px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;white-space:pre;shape-inside:url(#rect4635);display:inline" /><path
        style="fill:none;stroke:#000000;stroke-width:1.065;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow4);marker-end:url(#Arrow4)"
        d="M 53.625968,119.90835 C 16.69817,127.9684 26.547061,76.299638 27.741911,72.839717"
        id="path5160"
