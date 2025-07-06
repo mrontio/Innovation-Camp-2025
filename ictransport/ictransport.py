@@ -18,8 +18,8 @@ from pathlib import Path
 class ICTransport(ABC):
 
     def __init__(self,
-                 timeout_s: float = 60,
-                 sleep_time: float = 10):
+                 timeout_s: float,
+                 sleep_time: float):
 
         self.timeout_s = timeout_s
         self.sleep_time = sleep_time
@@ -239,8 +239,6 @@ class LaptopTransport(ICTransport):
         
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
-            print(last_line)
-            print(expected_last_line)
             if last_line == expected_last_line:
                 return True
             time.sleep(self.sleep_time)
