@@ -250,8 +250,8 @@ class LaptopTransport(ICTransport):
 
         while self.not_timeout(start_time):
             last_lines = self.read_sync_file(pi)
-            print(last_lines)
-            print(expected_last_line)
+            # print(last_lines)
+            # print(expected_last_line)
             if expected_last_line in last_lines:
                 return True
             time.sleep(self.sleep_time)
@@ -313,7 +313,7 @@ class LaptopTransport(ICTransport):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
 
         # Take start time of listen() call
-        start_time = time.time()
+        start_time = time.time() - 5
 
         print(f"Laptop: Waiting confirmation from {node_type} to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
@@ -325,8 +325,8 @@ class LaptopTransport(ICTransport):
                 try:
                     paths = sftp.listdir_attr(share_path)
                     files = [f.filename for f in paths if f.st_mtime > start_time]
-                    print(files)
-                    print(file_to_listen)
+                    # print(files)
+                    # print(file_to_listen)
                     if file_to_listen in files:
                         file_path = share_path + "/" + file_to_listen
                         sftp.getfo(file_path, buf)
@@ -423,8 +423,8 @@ class NodeTransport(ICTransport):
 
         while self.not_timeout(start_time):
             last_lines = self.read_sync_file(pi)
-            print(last_lines)
-            print(expected_last_line)
+            # print(last_lines)
+            # print(expected_last_line)
             if expected_last_line in last_lines:
                 return True
             time.sleep(self.sleep_time)
@@ -464,7 +464,7 @@ class NodeTransport(ICTransport):
         return ""
 
     def listen(self, pi=None) -> np.array:
-        start_time = time.time()
+        start_time = time.time() - 5
 
         print(f"{self.node_type}: Waiting confirmation from Laptop to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
