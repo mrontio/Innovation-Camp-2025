@@ -174,15 +174,17 @@ class LaptopTransport(ICTransport):
     
     def get_node_info(self, pi):
         if pi:
+            node_type = "Pi"
             sftp = self.pi_sftp
             sync_file = self.pi_sync
             share_path = self.pi_share_path
         else:
+            node_type = "HPC"
             sftp = self.hpc_sftp
             sync_file = self.hpc_sync
-            share_path =  self.hpc_share_path
+            share_path = self.hpc_share_path
         
-        return sftp, sync_file, share_path
+        return node_type, sftp, sync_file, share_path
     
     def __reconnectSFTP(self, pi):
         print("error: SSH connection lost, trying to re-establish...")
@@ -193,14 +195,14 @@ class LaptopTransport(ICTransport):
             self.hpc_client, self.hpc_sftp = self.__connectSFTP(self.hpc_username, self.hpc_address, verbose=True)
       
     def append_file(self, string, pi):
-        sftp, sync_file, share_path = self.get_node_info(pi)
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "a", -1)
         file.write(f"\nLaptop: {string}")
         file.flush()
         file.close()
     
     def read_last(self, pi):
-        sftp, sync_file, share_path = self.get_node_info(pi)
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "r")
         lines = file.read().decode().strip().split("\n")
         if len(lines) > 0:
@@ -211,7 +213,7 @@ class LaptopTransport(ICTransport):
         return out
 
     def clear_sync(self, pi):
-        sftp, sync_file, share_path = self.get_node_info(pi)
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         try:
             with sftp.open(sync_file, "w") as file:
                 pass
@@ -248,11 +250,7 @@ class LaptopTransport(ICTransport):
     def send(self, n, pi) -> bool:
         # Initialiase the buffer
         # - Acts as a file for np to write to
-        sftp, sync_file, share_path = self.get_node_info(pi)
-        if pi:
-            node_type = "Pi"
-        else:
-            node_type = "HPC"
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
 
         start_time = time.time()
         
@@ -301,12 +299,7 @@ class LaptopTransport(ICTransport):
         return ""
     
     def listen(self, pi) -> np.array:
-        sftp, sync_file, share_path = self.get_node_info(pi)
-
-        if pi:
-            node_type = "Pi"
-        else:
-            node_type = "HPC"
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
             
         # Take start time of listen() call
         start_time = time.time()
