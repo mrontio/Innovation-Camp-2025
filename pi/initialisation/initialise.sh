@@ -2,7 +2,7 @@
 
 VENV_PATH="$HOME/hackathon-venv"
 
-scripts="scripts/pi-config.sh scripts/apt.sh scripts/venv.sh scripts/pip.sh scripts/bashrc.sh"
+scripts="scripts/pi-config.sh scripts/apt.sh scripts/venv.sh scripts/pip.sh scripts/ictransport.sh scripts/bashrc.sh"
 
 for script in $scripts;
 do
