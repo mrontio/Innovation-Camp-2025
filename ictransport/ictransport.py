@@ -325,6 +325,8 @@ class LaptopTransport(ICTransport):
                 try:
                     paths = sftp.listdir_attr(share_path)
                     files = [f.filename for f in paths if f.st_mtime > start_time]
+                    print(files)
+                    print(file_to_listen)
                     if file_to_listen in files:
                         file_path = share_path + "/" + file_to_listen
                         sftp.getfo(file_path, buf)
