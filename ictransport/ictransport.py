@@ -67,8 +67,8 @@ class LaptopTransport(ICTransport):
                  hpc_address: str,
                  pi_share_path: str = "~/ic-transport", # Please always provide absolute full path
                  hpc_share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 timeout_s: float = 120,
-                 sleep_time: float = 5):
+                 timeout_s: float = None,
+                 sleep_time: float = 1):
 
         super().__init__(timeout_s, sleep_time)
 
