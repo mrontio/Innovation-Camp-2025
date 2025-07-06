@@ -237,6 +237,8 @@ class LaptopTransport(ICTransport):
         
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
+            print(last_line)
+            print(expected_last_line)
             if last_line == expected_last_line:
                 return True
             time.sleep(self.sleep_time)
@@ -257,9 +259,10 @@ class LaptopTransport(ICTransport):
         buf = io.BytesIO()
         np.save(buf, n)
         buf.seek(0)
+        print("Laptop: Sending...")
 
         # Put buffer onto new file path with unique file name.
-        file_name = self.__uniqueFileName(sftp, pi)
+        file_name = self.__uniqueFileName(sftp, share_path)
         file_path = share_path + "/" + file_name
         while self.not_timeout(start_time):
             try:
@@ -268,11 +271,14 @@ class LaptopTransport(ICTransport):
                 # Write acknowledgement
                 self.append_file(f"{share_path}/{file_name.replace(".npy", "")}-sent", pi)
 
+                print(f"Laptop: Waiting for confirmation from {node_type}")
                 if self.awaiting_after_send(f"{node_type}: {share_path}/{file_name.replace(".npy", "")}-received", start_time, pi):
+                    print(f"Laptop: File was sent sucessfully to {node_type}")
                     return True
             except (paramiko.SSHException, TimeoutError) as e:
                 self.__reconnectSFTP(pi)
-
+        
+        print(f"Laptop: Timeout! It seems that the file was not sent successfully")
         return False
     
     def awaiting_before_listen(self, start_time, pi):
@@ -288,7 +294,8 @@ class LaptopTransport(ICTransport):
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line.startswith(f"{node_type}: ") and last_line.endswith("-sent"):
-                return last_line.replace(f"{node_type}: ", "").replace("-sent", "").replace(share_path, "").strip() + ".npy"
+                return last_line.replace(f"{node_type}: ", "").replace("-sent", "").replace(f"{share_path}/", "").strip() + ".npy"
+
             time.sleep(self.sleep_time)
 
         return ""
@@ -304,10 +311,10 @@ class LaptopTransport(ICTransport):
         # Take start time of listen() call
         start_time = time.time()
 
-        print(f"Waiting confirmation from {node_type} to start listening")
+        print(f"Laptop: Waiting confirmation from {node_type} to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
         if file_to_listen:
-            print(f"Confirmation received from {node_type}. Listening...")
+            print(f"Laptop: Confirmation received from {node_type}. Listening...")
             # Create buffer for np to write into
             buf = io.BytesIO()
             while self.not_timeout(start_time):
@@ -430,7 +437,7 @@ class NodeTransport(ICTransport):
         while self.not_timeout(start_time):
             last_line = self.read_last(pi)
             if last_line.startswith("Laptop: ") and last_line.endswith("-sent"):
-                return last_line.replace("Laptop: ", "").replace("-sent", "").replace(self.share_path, "").strip() + ".npy"
+                return last_line.replace("Laptop: ", "").replace("-sent", "").replace(f"{self.share_path}/", "").strip() + ".npy"
             time.sleep(self.sleep_time)
 
         return ""
