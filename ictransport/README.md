@@ -27,5 +27,23 @@ You need to install ictransport on your *HPC instance* and *your laptop* to enab
       pip install -e ./
       ```
 2. On your laptop
-   1. (Windows) Create a WSL to run Linux commands on
+   1. (Windows) Create a WSL to run Linux commands on (sorry windows users).
    2. Connect to [GlobalProtect](https://sotonproduction.service-now.com/serviceportal?id=kb_article_view&sys_kb_id=f04106b747e4d5583035862c736d43a2).
+   3. Clone this repository
+      ```
+      cd Downloads
+      git clone https://github.com/mrontio/Innovation-Camp-2025.git
+      cd Innovation-Camp-2025
+      ```
+   4. Create a virtial environment just for this.
+      ```
+      python -m venv ~/Downloads/ictransport-venv
+      source ~/Downloads/ictransport-venv
+      ```
+   5. Edit the configuration file with the address of the Pi and Iridis
+      ```
+      TODO
+      ```
+   7. Execute laptop_loop.py, which
+      - Monitors activity from both sides.
+      - Copies files when needed.
