@@ -313,7 +313,7 @@ class LaptopTransport(ICTransport):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
 
         # Take start time of listen() call
-        start_time = time.time() - 5
+        start_time = time.time()
 
         print(f"Laptop: Waiting confirmation from {node_type} to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
@@ -324,7 +324,7 @@ class LaptopTransport(ICTransport):
             while self.not_timeout(start_time):
                 try:
                     paths = sftp.listdir_attr(share_path)
-                    files = [f.filename for f in paths if f.st_mtime > start_time]
+                    files = [f.filename for f in paths]
                     # print(files)
                     # print(file_to_listen)
                     if file_to_listen in files:
@@ -464,7 +464,7 @@ class NodeTransport(ICTransport):
         return ""
 
     def listen(self, pi=None) -> np.array:
-        start_time = time.time() - 5
+        start_time = time.time()
 
         print(f"{self.node_type}: Waiting confirmation from Laptop to start listening")
         file_to_listen = self.awaiting_before_listen(start_time, pi)
@@ -472,7 +472,7 @@ class NodeTransport(ICTransport):
             print(f"{self.node_type}: Confirmation received from Laptop. Listening...")
             while self.not_timeout(start_time):
                 paths = Path(self.share_path).iterdir()
-                files = [f.name for f in paths if f.stat().st_mtime > start_time]
+                files = [f.name for f in paths]
                 if file_to_listen in files:
                     array = np.load(self.share_path + "/" + file_to_listen)
 
