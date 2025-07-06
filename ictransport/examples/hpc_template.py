@@ -1,22 +1,18 @@
 from ictransport import NodeTransport
-import numpy as np
 
-hpc_share_path = ""
+# Ensure to use the same file used when initialising Laptop
+hpc_share_path = "" # Please use an absolute path
 
-# Create the communication object
-hpct = NodeTransport(pi=False, share_path=hpc_share_path)
+print("Initialising HPC!")
+hpc = NodeTransport(pi=False, share_path=hpc_share_path)
 
-# Service loop
-while True:
-    # Wait for the Pi to give you something to do
-    pi_input = hpct.listen()
+# Receive data observed by pi from laptop
+received_input = hpc.listen()
 
-    print(f"Received {pi_input.shape}. Processing")
+# Your code that needs hpc should replace the line below
+processed_output = received_input * 2
 
-    # Do some big calculation with your big HPC capabilities
-    processed_output = pi_input * 2
+# Send processed data to pi through the laptop
+hpc.send(processed_output)
 
-    print(f"Processing complete. Returning to sender.")
-
-    # Send it over
-    hpct.send(processed_output)
+print("HPC: A file has been receved, process and sent back!")

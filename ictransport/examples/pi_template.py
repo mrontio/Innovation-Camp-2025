@@ -1,27 +1,24 @@
 from ictransport import NodeTransport
 import numpy as np
 
-pi_share_path = ""
+# Ensure to use the same file used when initialising Laptop
+pi_share_path = "" # Please use an absolute path
 
-# Create the communication object
+print("Initialising Pi!")
 pi = NodeTransport(pi=True, share_path=pi_share_path)
 
-print("Creating camera outputs")
-
-# Imaginary sensor data
+# Imaginary sensor data after observing some data.
+# Your code that uses the pi and its sensors should replace the line below
 camera_output = np.ones((128, 128))
 
-print("Sending...")
-# Send it over
+# Send observed data to laptop to be sent to hpc
 pi.send(camera_output)
 
-print("Listening...")
+# Receive processed data by the hpc through the laptop
+received_output = pi.listen()
 
-# Wait for the server to process it
-hpc_output = pi.listen()
-
-print("Done")
+print("Pi: A state has been observed and processed file!")
 
 # Verify it's correct
-# The function on HPC is simply X * 2
-print(f"Output coincides? {camera_output}\n{hpc_output}")
+# The function on hpc template is simply X * 2
+print(f"Output coincides? {camera_output}\n\n{received_output}")
