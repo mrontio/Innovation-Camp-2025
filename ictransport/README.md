@@ -6,7 +6,7 @@ To simplify the hackathon for you, we decided to create a semi-transparent layer
 ## Startup Procedure (**important**)
 As this was written in about 24 hours of work, there is a huge dependency on the order of starting each process. From now on, make sure to start them as pictured:
 
-![startup](img/startup.png)
+<p align="center"><img src="./img/startup.png" alt="startup diagram" title="startup" width="400" height="400"></p>
 
 1. The laptop is the central puzzle piece to this, make sure to start it first.
 2. The HPC is typically the listener. Start in second.
