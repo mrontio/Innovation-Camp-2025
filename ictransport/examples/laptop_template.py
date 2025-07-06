@@ -26,6 +26,6 @@ laptop.send(pi_input, pi=False)
 hpc_output = laptop.listen(pi=False)
 
 # Send received data to pi
-laptop.send(hpc_output, pi=False)
+laptop.send(hpc_output, pi=True)
 
 print("Laptop: A single file transport has been completed!")
