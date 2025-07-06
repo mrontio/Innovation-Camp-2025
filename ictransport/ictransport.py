@@ -39,6 +39,10 @@ class ICTransport(ABC):
         pass
 
     @abstractmethod
+    def read_sync_file(self, pi) -> str:
+        pass
+
+    @abstractmethod
     def clear_sync(self, pi) -> None:
         pass
 
@@ -201,6 +205,13 @@ class LaptopTransport(ICTransport):
         file.flush()
         file.close()
 
+    def read_sync_file(self, pi=None) -> str:
+        node_type, sftp, sync_file, share_path = self.get_node_info(pi)
+        file = sftp.file(sync_file, "r")
+        lines = file.read().decode().strip().split("\n")
+        file.close()
+        return lines
+
     def read_last(self, pi):
         node_type, sftp, sync_file, share_path = self.get_node_info(pi)
         file = sftp.file(sync_file, "r")
@@ -238,8 +249,7 @@ class LaptopTransport(ICTransport):
         Uses the same global timeout"""
 
         while self.not_timeout(start_time):
-            last_line = self.read_last(pi)
-            if last_line == expected_last_line:
+            if expected_last_line in self.read_sync_file(pi)
                 return True
             time.sleep(self.sleep_time)
 
@@ -264,7 +274,6 @@ class LaptopTransport(ICTransport):
             try:
                 sftp.putfo(buf, file_path)
 
-                time.sleep(5)
                 # Write acknowledgement
                 self.append_file(f"{share_path}/{file_name.replace('.npy', '')}-sent", pi)
 
@@ -388,7 +397,12 @@ class NodeTransport(ICTransport):
                 out = lines[-1].strip()
             else:
                 out = ""
-            return out
+        return out
+
+    def read_sync_file(self, pi=None) -> str:
+        with open(self.sync_file, "r") as file:
+            lines = file.read().strip().split("\n")
+            return lines
 
     def clear_sync(self, pi=None) -> None:
         try:
@@ -403,8 +417,7 @@ class NodeTransport(ICTransport):
         Uses the same global timeout"""
 
         while self.not_timeout(start_time):
-            last_line = self.read_last(pi)
-            if last_line == expected_last_line:
+            if expected_last_line in self.read_sync_file(pi)
                 return True
             time.sleep(self.sleep_time)
 
@@ -419,7 +432,6 @@ class NodeTransport(ICTransport):
         while self.not_timeout(start_time):
             np.save(path, n)
 
-            time.sleep(5)
             # Write acknowledgement
             self.append_file(f"{self.share_path}/{file_name.replace('.npy', '')}-sent", pi)
 
@@ -455,7 +467,7 @@ class NodeTransport(ICTransport):
                 files = [f.name for f in paths if f.stat().st_mtime > start_time]
                 if file_to_listen in files:
                     array = np.load(self.share_path + "/" + file_to_listen)
-                    
+
                     # Write acknowledgement
                     self.append_file(f"{self.share_path}/{file_to_listen.replace('.npy', '')}-received", pi)
 
