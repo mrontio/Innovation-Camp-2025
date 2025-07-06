@@ -313,7 +313,11 @@ class NodeTransport(ICTransport):
             num = int(m.group(1)) + 1
         else:
             num = 1
-        return f"{num}.npy"
+        
+        if self.node_type == "HPC":
+            return f"{num}-out.npy"
+        else:
+            return f"{num}.npy"
     
     def append_file(self, string, pi=None) -> None:
         with open(self.sync_file, "a") as file:
