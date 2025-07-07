@@ -10,7 +10,7 @@ hpc_address = ""
 hpc_share_path = "" # Please use an absolute path
 
 print("Initialising Laptop!")
-laptop = LaptopTransport(pi_username, hpc_username, pi_address, hpc_address, pi_share_path, hpc_share_path)
+laptop = LaptopTransport(pi_username, hpc_username, pi_address, hpc_address, pi_share_path, hpc_share_path) # You can also adjust the timeout and sleep time using timeout_s= and sleep_time=, respectively.
 
 # Ensure that all sync files all empty
 laptop.clear_sync(pi=True)

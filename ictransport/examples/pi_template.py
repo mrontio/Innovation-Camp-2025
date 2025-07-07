@@ -7,7 +7,7 @@ username = getpass.getuser()
 pi_share_path = f"/home/{username}/ictransport" # Please use an absolute path
 
 print("Initialising Pi!")
-pi = NodeTransport(pi=True, share_path=pi_share_path)
+pi = NodeTransport(pi=True, share_path=pi_share_path) # You can also adjust the timeout and sleep time using timeout_s= and sleep_time=, respectively.
 
 # Imaginary sensor data after observing some data.
 # Your code that uses the pi and its sensors should replace the line below
