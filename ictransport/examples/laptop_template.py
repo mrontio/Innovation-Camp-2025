@@ -28,4 +28,8 @@ hpc_output = laptop.listen(pi=False)
 # Send received data to pi
 laptop.send(hpc_output, pi=True)
 
+# Close connection with both hpc and pi
+laptop.close_connection(pi=True)
+laptop.close_connection(pi=False)
+
 print("Laptop: A single file transport has been completed!")
