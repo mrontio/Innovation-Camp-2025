@@ -71,7 +71,7 @@ class LaptopTransport(ICTransport):
                  hpc_address: str,
                  pi_share_path: str = "~/ic-transport", # Please always provide absolute full path
                  hpc_share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 timeout_s: float = None,
+                 timeout_s: float = 120,
                  sleep_time: float = 1):
 
         super().__init__(timeout_s, sleep_time)
@@ -351,7 +351,7 @@ class NodeTransport(ICTransport):
     def __init__(self,
                  pi: bool,
                  share_path: str = "~/ic-transport", # Please always provide absolute full path
-                 timeout_s: float = None,
+                 timeout_s: float = 120,
                  sleep_time: float = 1):
 
         super().__init__(timeout_s, sleep_time)
