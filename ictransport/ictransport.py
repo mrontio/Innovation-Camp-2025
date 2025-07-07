@@ -8,9 +8,6 @@ import time
 import os
 from pathlib import Path
 
-# TODO: Better way to identifying the destination sending to automatically
-# TODO: Add timeout_s and sleep_time setters and getters?
-
 class ICTransport(ABC):
 
     def __init__(self,
