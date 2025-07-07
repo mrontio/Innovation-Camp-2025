@@ -9,11 +9,7 @@ import os
 from pathlib import Path
 
 # TODO: Better way to identifying the destination sending to automatically
-# TODO: Specify locations of log files when application starts
-# TODO: Ensure default of all timeouts is not None
 # TODO: Add timeout_s and sleep_time setters and getters?
-# TODO: Add better timeout to listening and before listening so both don't share and send
-# TODO: Add sleep throughout
 
 class ICTransport(ABC):
 
@@ -99,6 +95,7 @@ class LaptopTransport(ICTransport):
             with self.pi_sftp.open(self.pi_sync, "w") as file:
                 pass
         print(f"Pi connection: success.")
+        print(f"Sync file for Pi is: {self.pi_sync}")
 
 
         # Setup HPC connection and sync file
@@ -111,6 +108,7 @@ class LaptopTransport(ICTransport):
             with self.hpc_sftp.open(self.hpc_sync, "w") as file:
                 pass
         print(f"HPC connection: success.")
+        print(f"Sync file for HPC is: {self.hpc_sync}")
 
 
     def __connectSFTP(self, username, address, verbose=True):
