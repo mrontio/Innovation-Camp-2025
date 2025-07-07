@@ -8,7 +8,7 @@ In accordance with Southampton Security policy, if you log in to GlobalProtect y
 - **MUST** use the same account for Iridis and GlobalProtect
 - **MUST NOT** hand the laptop you're signed in to your teammates. 
 
-## Startup Procedure (**important**)
+## Startup Procedure 
 As this was written in about 24 hours of work, there is a huge dependency on the order of starting each process. From now, make sure to start them as pictured:
 
 <p align="center"><img src="./img/startup.png" alt="startup diagram" title="startup" width="200" height="200"></p>
