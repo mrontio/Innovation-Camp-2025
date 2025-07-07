@@ -3,6 +3,10 @@
 
 To simplify the hackathon for you, we decided to create a semi-transparent layer to communicate numpy objects from Pi to HPC and back with the help of your laptop.
 
+**Note**: In accordance with Southampton Security policy, if you log in to GlobalProtect you
+- **MUST** use the same account for Iridis and
+- **MUST NOT** hand the laptop you're signed in to your teammates. 
+
 ## Startup Procedure (**important**)
 As this was written in about 24 hours of work, there is a huge dependency on the order of starting each process. From now, make sure to start them as pictured:
 
@@ -19,22 +23,25 @@ You need to install ictransport on your *HPC instance* and *your laptop* to enab
 1. On your laptop
    1. (Windows) Create a WSL to run Linux commands on (sorry windows users).
    2. Connect to [GlobalProtect](https://sotonproduction.service-now.com/serviceportal?id=kb_article_view&sys_kb_id=f04106b747e4d5583035862c736d43a2).
-   3. Clone this repository
+      - Remember, you
+        - **MUST** use the same account for Iridis and
+        - **MUST NOT** hand the laptop you're signed in to your teammates. 
+   4. Clone this repository
       ```
       cd Downloads
       git clone https://github.com/mrontio/Innovation-Camp-2025.git
       cd Innovation-Camp-2025
       ```
-   4. Create a virtial environment just for this.
+   5. Create a virtial environment just for this.
       ```
       python -m venv ~/Downloads/ictransport-venv
       source ~/Downloads/ictransport-venv/bin/activate
       ```
-   5. Install ictransport to the venv
+   6. Install ictransport to the venv
       ```
       pip install -e .
       ```
-   6. Edit [examples/laptop_template.py](./examples/laptop_template.py) with your credentials
+   7. Edit [examples/laptop_template.py](./examples/laptop_template.py) with your credentials
       ```
       pi_username = ""
       pi_address = ""
@@ -44,7 +51,7 @@ You need to install ictransport on your *HPC instance* and *your laptop* to enab
       hpc_address = ""
       hpc_share_path = "" # Please use an absolute path
       ```
-   7. Run [examples/laptop_template.py](./examples/laptop_template.py) & edit as needed for your demonstrator.
+   8. Run [examples/laptop_template.py](./examples/laptop_template.py) & edit as needed for your demonstrator.
       ```
       cd examples
       python laptop_template.py
