@@ -3,8 +3,9 @@
 
 To simplify the hackathon for you, we decided to create a semi-transparent layer to communicate numpy objects from Pi to HPC and back with the help of your laptop.
 
-**Note**: In accordance with Southampton Security policy, if you log in to GlobalProtect you
-- **MUST** use the same account for Iridis and
+## University Security Policy
+In accordance with Southampton Security policy, if you log in to GlobalProtect you
+- **MUST** use the same account for Iridis and GlobalProtect
 - **MUST NOT** hand the laptop you're signed in to your teammates. 
 
 ## Startup Procedure (**important**)
