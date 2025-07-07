@@ -4,7 +4,7 @@ from ictransport import NodeTransport
 hpc_share_path = "" # Please use an absolute path
 
 print("Initialising HPC!")
-hpc = NodeTransport(pi=False, share_path=hpc_share_path)
+hpc = NodeTransport(pi=False, share_path=hpc_share_path) # You can also adjust the timeout and sleep time using timeout_s= and sleep_time=, respectively.
 
 # Receive data observed by pi from laptop
 received_input = hpc.listen()
