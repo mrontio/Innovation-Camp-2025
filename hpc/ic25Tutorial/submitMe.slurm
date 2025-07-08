@@ -8,6 +8,7 @@
 #SBATCH --job-name=<job-name>
 #SBATCH --output=run.out
 #SBATCH --error=run.err
+#SBATCH --reservation=<root>
 
 ######################################################################
 module load conda/python3
